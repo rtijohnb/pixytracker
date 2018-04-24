@@ -1,0 +1,7 @@
+struct ServoControl {
+    unsigned short pan;
+    unsigned short tilt;
+    unsigned short frequency;
+} ; //Extensibility
+
+const string DEFAULT_CAM_CONTROL_TOPIC_NAME = "pixy/servo_control";
