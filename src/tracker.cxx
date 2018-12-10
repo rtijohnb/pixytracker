@@ -54,9 +54,14 @@ const char *sigName[] = {
  #define PIXY_RCS_CENTER_POS         ((PIXY_RCS_MAX_POS-PIXY_RCS_MIN_POS)/2)
 
 // PID control parameters //
-#define PAN_PROPORTIONAL_GAIN     400	// 400 350
-#define PAN_DERIVATIVE_GAIN       300	// 300 600
-#define TILT_PROPORTIONAL_GAIN    400	// 500 500
+//#define PAN_PROPORTIONAL_GAIN     400	// 400 350
+//#define PAN_DERIVATIVE_GAIN       300	// 300 600
+//#define TILT_PROPORTIONAL_GAIN    500	// 500 500
+//#define TILT_DERIVATIVE_GAIN      300	// 400 700
+
+#define PAN_PROPORTIONAL_GAIN     300	// 400 350
+#define PAN_DERIVATIVE_GAIN       200	// 300 600
+#define TILT_PROPORTIONAL_GAIN    350	// 500 500
 #define TILT_DERIVATIVE_GAIN      300	// 400 700
 
 #define SHAPE_X_MIN 0
@@ -66,6 +71,11 @@ const char *sigName[] = {
 
 #define PIXY_X_CENTER              ((SHAPE_X_MAX-SHAPE_X_MIN)/2)
 #define PIXY_Y_CENTER              ((SHAPE_Y_MAX-SHAPE_Y_MIN)/2)
+
+// These values will keep the tracked ball centered over the orange dot over the "i" in "rti" in the Shapes demo.
+// Useful if you're tracking the orange ball.
+//#define PIXY_X_CENTER              (168)
+//#define PIXY_Y_CENTER              (89)
 
 // Local prototypes
 void handle_SIGINT(int unused);

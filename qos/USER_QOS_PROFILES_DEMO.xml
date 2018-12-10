@@ -1,0 +1,120 @@
+<?xml version="1.0"?>
+<dds xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+     xsi:noNamespaceSchemaLocation="/Applications/rti_connext_dds-5.3.0/resource/schema/rti_dds_qos_profiles.xsd"
+     version="5.3.0">
+
+     <!-- This QoS file contains a single library, "My_QOS_Library", that has
+          three profiles:
+          1. A Domain Participant profile that defines application-wide settings
+          2. A profile to support sending commands reliably.  It include settings
+             for both the data writer and the data reader.
+          3. A profile to send sensor data best effort.
+
+          In the application code, you would create the Domain Participant with
+          the "create_participant_with_profile" and would use "My_QOS_Library"
+          for the library name and "My_Participant_QOS" for the profile name.
+
+          In a similar fashion, you would use the create_datareader_with_profile
+          and create_datawriter_with_profile calls to setup your readers and
+          writers.  In those cases, you would use the same library name,
+          "My_QOS_Library" but the appropriate profile name for the data flow,
+          either "ReliableCommands" or "BestEfforSensorData".
+
+      -->
+     <qos_library name="My_QOS_Library">
+
+         <!-- Define a profile for the Domain Participant (DP). The DP settings
+              tend to apply to the entire application rather than to individual
+              data flows.
+
+              This one is inherited from a profile in another library using the
+              optional "base_name" attribute.  You can inherit from the
+              built-in QoS profiles this way, or from your own profiles.
+          -->
+         <qos_profile name="My_Participant_QOS" base_name="AnotherLibrary::InheritedProfile" is_default_qos="false">
+
+             <!-- Now we define settings for this participant -->
+             <participant_qos>
+                 <!-- Use UDPv4 and Shared Memory transports -->
+                 <transport_builtin>
+                     <mask>UDPv4 | SHMEM</mask>
+                 </transport_builtin>
+
+                 <!-- This section configures discovery, including the initial
+                      peers list that will be sent discovery information, and
+                      configuring a multicast address on which to receive
+                      discovery traffic from other participants
+                  -->
+                 <discovery>
+                     <initial_peers>
+                         <element>192.168.100.100</element>
+                         <element>239.255.0.1</element>
+                     </initial_peers>
+                     <multicast_receive_addresses>
+                         <element>239.255.0.1</element>
+                     </multicast_receive_addresses>
+                 </discovery>
+             </participant_qos>
+         </qos_profile>
+
+         <!--  This profile is a matched pair of settings for datawriters and
+               datareaders that will be used to send commands reliably.
+         -->
+         <qos_profile name="ReliableCommands">
+             <datareader_qos>
+                 <reliability>
+                     <kind>RELIABLE_RELIABILITY_QOS</kind>
+                 </reliability>
+                 <history>
+                     <kind>KEEP_ALL_HISTORY_QOS</kind>
+                 </history>
+                 <resource_limits>
+                     <max_samples>256</max_samples>
+                     <initial_samples>16</initial_samples>
+                     <max_samples_per_instance>16</max_samples_per_instance>
+                 </resource_limits>
+             </datareader_qos>
+
+             <datawriter_qos>
+                 <reliability>
+                     <kind>RELIABLE_RELIABILITY_QOS</kind>
+                     <max_blocking_time>
+                         <sec>1</sec>
+                         <nanosec>0</nanosec>
+                     </max_blocking_time>
+                 </reliability>
+                 <history>
+                     <kind>KEEP_ALL_HISTORY_QOS</kind>
+                 </history>
+                 <resource_limits>
+                     <max_samples>32</max_samples>
+                 </resource_limits>
+             </datawriter_qos>
+         </qos_profile>
+
+         <!--  This profile is a matched pair of settings for datawriters and
+               datareaders that will be used to send sensor data best effort.
+         -->
+         <qos_profile name="BestEffortSensorData">
+             <datareader_qos>
+                 <reliability>
+                     <kind>BEST_EFFORT_RELIABILITY_QOS</kind>
+                 </reliability>
+                 <history>
+                     <kind>KEEP_LAST_HISTORY_QOS</kind>
+                     <depth>10</depth>
+                 </history>
+             </datareader_qos>
+
+             <datawriter_qos>
+                 <reliability>
+                     <kind>BEST_EFFORT_RELIABILITY_QOS</kind>
+                 </reliability>
+                 <history>
+                     <depth>20</depth>
+                 </history>
+             </datawriter_qos>
+         </qos_profile>
+
+     </qos_library>
+</dds>
