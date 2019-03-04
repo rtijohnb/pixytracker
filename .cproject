@@ -25,15 +25,19 @@
 							<tool id="cdt.managedbuild.tool.macosx.c.linker.macosx.exe.debug.1053278146" name="MacOS X C Linker" superClass="cdt.managedbuild.tool.macosx.c.linker.macosx.exe.debug"/>
 							<tool id="cdt.managedbuild.tool.macosx.cpp.linker.macosx.exe.debug.2102724982" name="MacOS X C++ Linker" superClass="cdt.managedbuild.tool.macosx.cpp.linker.macosx.exe.debug">
 								<option id="macosx.cpp.link.option.paths.353657630" name="Library search path (-L)" superClass="macosx.cpp.link.option.paths" useByScannerDiscovery="false" valueType="libPaths">
-									<listOptionValue builtIn="false" value="${NDDSHOME}/lib/x64Darwin16clang8.0"/>
+									<listOptionValue builtIn="false" value="&quot;${NDDSHOME}/lib/x64Darwin17clang9.0&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${RTI_OPENSSLHOME}&quot;"/>
 								</option>
 								<option id="macosx.cpp.link.option.libs.1580399315" name="Libraries (-l)" superClass="macosx.cpp.link.option.libs" useByScannerDiscovery="false" valueType="libs">
-									<listOptionValue builtIn="false" value="nddscppd"/>
+									<listOptionValue builtIn="false" value="nddssecurity"/>
+									<listOptionValue builtIn="false" value="nddscpp"/>
 									<listOptionValue builtIn="false" value="nddscd"/>
-									<listOptionValue builtIn="false" value="nddscored"/>
+									<listOptionValue builtIn="false" value="nddscore"/>
 									<listOptionValue builtIn="false" value="dl"/>
 									<listOptionValue builtIn="false" value="m"/>
 									<listOptionValue builtIn="false" value="pthread"/>
+									<listOptionValue builtIn="false" value="ssl"/>
+									<listOptionValue builtIn="false" value="crypto"/>
 								</option>
 								<option id="macosx.cpp.link.option.shared.984812947" name="Shared (-dynamiclib)" superClass="macosx.cpp.link.option.shared" useByScannerDiscovery="false" value="false" valueType="boolean"/>
 								<inputType id="cdt.managedbuild.tool.macosx.cpp.linker.input.560226995" superClass="cdt.managedbuild.tool.macosx.cpp.linker.input">
@@ -101,15 +105,19 @@
 							<tool id="cdt.managedbuild.tool.macosx.c.linker.macosx.exe.release.20557746" name="MacOS X C Linker" superClass="cdt.managedbuild.tool.macosx.c.linker.macosx.exe.release"/>
 							<tool id="cdt.managedbuild.tool.macosx.cpp.linker.macosx.exe.release.1195273039" name="MacOS X C++ Linker" superClass="cdt.managedbuild.tool.macosx.cpp.linker.macosx.exe.release">
 								<option id="macosx.cpp.link.option.libs.1638590211" name="Libraries (-l)" superClass="macosx.cpp.link.option.libs" useByScannerDiscovery="false" valueType="libs">
+									<listOptionValue builtIn="false" value="nddssecurity"/>
 									<listOptionValue builtIn="false" value="nddscpp"/>
 									<listOptionValue builtIn="false" value="nddscd"/>
 									<listOptionValue builtIn="false" value="nddscore"/>
 									<listOptionValue builtIn="false" value="dl"/>
 									<listOptionValue builtIn="false" value="m"/>
 									<listOptionValue builtIn="false" value="pthread"/>
+									<listOptionValue builtIn="false" value="ssl"/>
+									<listOptionValue builtIn="false" value="crypto"/>
 								</option>
 								<option id="macosx.cpp.link.option.paths.1915044426" name="Library search path (-L)" superClass="macosx.cpp.link.option.paths" useByScannerDiscovery="false" valueType="libPaths">
 									<listOptionValue builtIn="false" value="&quot;${NDDSHOME}/lib/x64Darwin17clang9.0&quot;"/>
+									<listOptionValue builtIn="false" value="&quot;${RTI_OPENSSLHOME}&quot;"/>
 								</option>
 								<inputType id="cdt.managedbuild.tool.macosx.cpp.linker.input.699562675" superClass="cdt.managedbuild.tool.macosx.cpp.linker.input">
 									<additionalInput kind="additionalinputdependency" paths="$(USER_OBJS)"/>

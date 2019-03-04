@@ -314,6 +314,7 @@ int track (unsigned int tracked_channel)
 	DDSDataWriter *writer = NULL;
 	DDS_ReturnCode_t retcode;
 	ShapeTypeListener *shape_listener = new ShapeTypeListener;
+	ServoTypeListener *servo_listener = new ServoTypeListener;
 	const char *shape_type_name = NULL;
 	const char *servo_type_name = NULL;
 	ShapeTypeExtended shape;
@@ -326,7 +327,7 @@ int track (unsigned int tracked_channel)
 	char channel_filter[50];
 
 	// Create the domain participant
-	participant = DDSTheParticipantFactory->create_participant_with_profile(0, "PixyTracker_Library", "PixyTracker_Profile",
+	participant = DDSTheParticipantFactory->create_participant_with_profile(53, "PixyTracker_Library", "Secure_PixyTracker_Profile",
 			NULL, DDS_STATUS_MASK_NONE);
 //	participant = DDSTheParticipantFactory->create_participant(0, DDS_PARTICIPANT_QOS_DEFAULT,NULL,DDS_STATUS_MASK_NONE);
 	if (participant == NULL) {
@@ -373,8 +374,8 @@ int track (unsigned int tracked_channel)
 	}
 
 	// Create a data reader and a data writer
-	reader = participant->create_datareader_with_profile(cft, "PixyTracker_Library", "PixyTracker_Profile", shape_listener, DDS_STATUS_MASK_ALL);
-	writer = participant->create_datawriter_with_profile(servo_topic, "PixyTracker_Library", "PixyTracker_Profile", NULL, DDS_STATUS_MASK_NONE);
+	reader = participant->create_datareader_with_profile(cft, "PixyTracker_Library", "Secure_PixyTracker_Profile", shape_listener, DDS_STATUS_MASK_ALL);
+	writer = participant->create_datawriter_with_profile(servo_topic, "PixyTracker_Library", "Secure_PixyTracker_Profile", servo_listener, DDS_STATUS_MASK_ALL);
 	if ((reader == NULL) || (writer == NULL))
 	{
         fprintf(stderr, "create reader and writer\n");

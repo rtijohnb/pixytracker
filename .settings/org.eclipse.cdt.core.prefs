@@ -1,6 +1,11 @@
 eclipse.preferences.version=1
-environment/project/cdt.managedbuild.config.gnu.macosx.exe.debug.680747593/NDDSHOME/delimiter=\:
-environment/project/cdt.managedbuild.config.gnu.macosx.exe.debug.680747593/NDDSHOME/operation=append
-environment/project/cdt.managedbuild.config.gnu.macosx.exe.debug.680747593/NDDSHOME/value=/Applications/rti_connext_dds-5.3.0
+environment/project/cdt.managedbuild.config.gnu.macosx.exe.debug.680747593/RTI_OPENSSLHOME/delimiter=\:
+environment/project/cdt.managedbuild.config.gnu.macosx.exe.debug.680747593/RTI_OPENSSLHOME/operation=append
+environment/project/cdt.managedbuild.config.gnu.macosx.exe.debug.680747593/RTI_OPENSSLHOME/value=/usr/local/opt/openssl/lib/
 environment/project/cdt.managedbuild.config.gnu.macosx.exe.debug.680747593/append=true
 environment/project/cdt.managedbuild.config.gnu.macosx.exe.debug.680747593/appendContributed=true
+environment/project/cdt.managedbuild.config.macosx.exe.release.1336548041/RTI_OPENSSLHOME/delimiter=\:
+environment/project/cdt.managedbuild.config.macosx.exe.release.1336548041/RTI_OPENSSLHOME/operation=append
+environment/project/cdt.managedbuild.config.macosx.exe.release.1336548041/RTI_OPENSSLHOME/value=/usr/local/opt/openssl/lib/
+environment/project/cdt.managedbuild.config.macosx.exe.release.1336548041/append=true
+environment/project/cdt.managedbuild.config.macosx.exe.release.1336548041/appendContributed=true
