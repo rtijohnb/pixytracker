@@ -80,7 +80,7 @@ const char *sigName[] = {
 // Local prototypes
 void handle_SIGINT(int unused);
 void initialize_gimbals(void);
-int track (unsigned int);
+int track (int domainId, unsigned int);
 int main (int argc, char *argv[]);
 
 //-------------------------------------------------------------------
@@ -302,7 +302,7 @@ static int subscriber_shutdown (DDSDomainParticipant *participant)
 
 }
 
-int track (unsigned int tracked_channel)
+int track (int domainId, unsigned int tracked_channel)
 {
 	int status = 0;
 	DDSDomainParticipant *participant = NULL;
@@ -327,7 +327,7 @@ int track (unsigned int tracked_channel)
 	char channel_filter[50];
 
 	// Create the domain participant
-	participant = DDSTheParticipantFactory->create_participant_with_profile(53, "PixyTracker_Library", "Secure_PixyTracker_Profile",
+	participant = DDSTheParticipantFactory->create_participant_with_profile(domainId, "PixyTracker_Library", "PixyTracker_Active_Profile",
 			NULL, DDS_STATUS_MASK_NONE);
 //	participant = DDSTheParticipantFactory->create_participant(0, DDS_PARTICIPANT_QOS_DEFAULT,NULL,DDS_STATUS_MASK_NONE);
 	if (participant == NULL) {
@@ -374,8 +374,8 @@ int track (unsigned int tracked_channel)
 	}
 
 	// Create a data reader and a data writer
-	reader = participant->create_datareader_with_profile(cft, "PixyTracker_Library", "Secure_PixyTracker_Profile", shape_listener, DDS_STATUS_MASK_ALL);
-	writer = participant->create_datawriter_with_profile(servo_topic, "PixyTracker_Library", "Secure_PixyTracker_Profile", servo_listener, DDS_STATUS_MASK_ALL);
+	reader = participant->create_datareader_with_profile(cft, "PixyTracker_Library", "PixyTracker_Active_Profile", shape_listener, DDS_STATUS_MASK_ALL);
+	writer = participant->create_datawriter_with_profile(servo_topic, "PixyTracker_Library", "PixyTracker_Active_Profile", servo_listener, DDS_STATUS_MASK_ALL);
 	if ((reader == NULL) || (writer == NULL))
 	{
         fprintf(stderr, "create reader and writer\n");
@@ -433,13 +433,14 @@ int track (unsigned int tracked_channel)
 //-------------------------------------------------------------------
 int main (int argc, char *argv[])
 {
-    int domainId = 0;
+    int domainId = 53;
     int return_value;
     unsigned int trackedChannel = INDEX_GREEN;
 
     signal(SIGINT, handle_SIGINT);
 
     printf("PIXY TRACKER: %s %s\n", __DATE__, __TIME__);
+    printf("DomainID: %d\n", domainId);
 
     if (argc > 1)
     {
@@ -459,6 +460,6 @@ int main (int argc, char *argv[])
     if (trackedChannel > NUM_SIGS) trackedChannel = INDEX_GREEN;
     printf("Tracking %s\n", sigName[trackedChannel]);
     initialize_gimbals();
-    track(trackedChannel);
+    track(domainId, trackedChannel);
 
 }
