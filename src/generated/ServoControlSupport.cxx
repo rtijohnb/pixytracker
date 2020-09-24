@@ -46,7 +46,9 @@ Defines:   TDataWriter, TData
 #define TDataWriter ServoControlDataWriter
 #define TData       ServoControl
 
+#define ENABLE_TDATAWRITER_DATA_CONSTRUCTOR_METHODS
 #include "dds_cpp/generic/dds_cpp_data_TDataWriter.gen"
+#undef ENABLE_TDATAWRITER_DATA_CONSTRUCTOR_METHODS
 
 #undef TDataWriter
 #undef TData
@@ -71,7 +73,9 @@ Defines:   TDataReader, TDataSeq, TData
 #define TDataSeq    ServoControlSeq
 #define TData       ServoControl
 
+#define ENABLE_TDATAREADER_DATA_CONSISTENCY_CHECK_METHOD
 #include "dds_cpp/generic/dds_cpp_data_TDataReader.gen"
+#undef ENABLE_TDATAREADER_DATA_CONSISTENCY_CHECK_METHOD
 
 #undef TDataReader
 #undef TDataSeq
@@ -101,7 +105,9 @@ Defines:   TTypeSupport, TData, TDataReader, TDataWriter
 #define TDataReader  ServoControlDataReader
 #define TDataWriter  ServoControlDataWriter
 #define TGENERATE_SER_CODE
+#ifndef NDDS_STANDALONE_TYPE
 #define TGENERATE_TYPECODE
+#endif
 
 #include "dds_cpp/generic/dds_cpp_data_TTypeSupport.gen"
 
@@ -109,7 +115,9 @@ Defines:   TTypeSupport, TData, TDataReader, TDataWriter
 #undef TData
 #undef TDataReader
 #undef TDataWriter
+#ifndef NDDS_STANDALONE_TYPE
 #undef TGENERATE_TYPECODE
+#endif
 #undef TGENERATE_SER_CODE
 #undef TTYPENAME
 #undef TPlugin_new

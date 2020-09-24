@@ -41,6 +41,9 @@ or consult the RTI Connext manual.
 #include "cdr/cdr_stream.h"
 #endif
 
+#include "xcdr/xcdr_interpreter.h"
+#include "xcdr/xcdr_stream.h"
+
 #ifndef cdr_log_h
 #include "cdr/cdr_log.h"
 #endif
@@ -48,6 +51,8 @@ or consult the RTI Connext manual.
 #ifndef pres_typePlugin_h
 #include "pres/pres_typePlugin.h"
 #endif
+
+#include "dds_c/dds_c_typecode_impl.h"
 
 #define RTI_CDR_CURRENT_SUBMODULE RTI_CDR_SUBMODULE_MASK_STREAM
 
@@ -59,204 +64,6 @@ or consult the RTI Connext manual.
 (De)Serialize functions:
 * ------------------------------------------------------------------------- */
 
-RTIBool 
-ShapeFillKindPlugin_serialize(
-    PRESTypePluginEndpointData endpoint_data,
-    const ShapeFillKind *sample, 
-    struct RTICdrStream *stream,    
-    RTIBool serialize_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    RTIBool serialize_sample, 
-    void *endpoint_plugin_qos)
-{
-    char * position = NULL;
-    const char *METHOD_NAME = "ShapeFillKindPlugin_serialize";
-
-    if (endpoint_data) {} /* To avoid warnings */
-    if (endpoint_plugin_qos) {} /* To avoid warnings */
-
-    if(serialize_encapsulation) {
-        if (!RTICdrStream_serializeAndSetCdrEncapsulation(stream , encapsulation_id)) {
-            return RTI_FALSE;
-        }
-
-        position = RTICdrStream_resetAlignment(stream);
-    }
-
-    if(serialize_sample) {
-
-        if (*sample != SOLID_FILL && *sample != TRANSPARENT_FILL && *sample != HORIZONTAL_HATCH_FILL && *sample != VERTICAL_HATCH_FILL){
-            RTICdrLog_exception(
-                METHOD_NAME, 
-                &RTI_CDR_LOG_SERIALIZE_INVALID_ENUMERATOR_ds, 
-                *sample, 
-                "ShapeFillKind");
-            return RTI_FALSE;       
-        }
-
-        if (!RTICdrStream_serializeEnum(stream, sample))
-        {
-            return RTI_FALSE;
-        }
-
-    }
-
-    if(serialize_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
-    return RTI_TRUE;
-}
-
-RTIBool 
-ShapeFillKindPlugin_deserialize_sample(
-    PRESTypePluginEndpointData endpoint_data,
-    ShapeFillKind *sample,
-    struct RTICdrStream *stream,   
-    RTIBool deserialize_encapsulation,
-    RTIBool deserialize_sample, 
-    void *endpoint_plugin_qos)
-{
-
-    char * position = NULL;
-    DDS_Enum enum_tmp;
-    const char *METHOD_NAME = "ShapeFillKindPlugin_deserialize_sample";
-
-    try {
-
-        if (endpoint_data) {} /* To avoid warnings */
-        if (endpoint_plugin_qos) {} /* To avoid warnings */
-        if(deserialize_encapsulation) {
-
-            if (!RTICdrStream_deserializeAndSetCdrEncapsulation(stream)) {
-                return RTI_FALSE;
-            }
-
-            position = RTICdrStream_resetAlignment(stream);
-        }
-        if(deserialize_sample) {
-
-            if (!RTICdrStream_deserializeEnum(stream, &enum_tmp))
-            {
-                return RTI_FALSE;
-            }
-            switch (enum_tmp) {
-                case SOLID_FILL:
-                *sample=SOLID_FILL;
-                break;
-                case TRANSPARENT_FILL:
-                *sample=TRANSPARENT_FILL;
-                break;
-                case HORIZONTAL_HATCH_FILL:
-                *sample=HORIZONTAL_HATCH_FILL;
-                break;
-                case VERTICAL_HATCH_FILL:
-                *sample=VERTICAL_HATCH_FILL;
-                break;
-                default:
-                {
-                    struct PRESTypePluginDefaultEndpointData * epd =
-                    (struct PRESTypePluginDefaultEndpointData *)
-                    endpoint_data;
-                    const struct PRESTypePluginSampleAssignabilityProperty * ap =
-                    PRESTypePluginDefaultEndpointData_getAssignabilityProperty(epd);
-
-                    if (ap->acceptUnknownEnumValue) {
-                        ShapeFillKind_initialize(sample);
-                    } else {
-                        stream->_xTypesState.unassignable = RTI_TRUE;
-                        RTICdrLog_exception(
-                            METHOD_NAME, 
-                            &RTI_CDR_LOG_DESERIALIZE_INVALID_ENUMERATOR_ds, 
-                            enum_tmp, 
-                            "ShapeFillKind");
-                        return RTI_FALSE;
-                    }
-                }
-            }
-
-        }
-
-        if(deserialize_encapsulation) {
-            RTICdrStream_restoreAlignment(stream,position);
-        }
-
-        return RTI_TRUE;
-
-    } catch (std::bad_alloc&) {
-        return RTI_FALSE;
-    }
-}
-
-RTIBool ShapeFillKindPlugin_skip(
-    PRESTypePluginEndpointData endpoint_data,
-    struct RTICdrStream *stream,   
-    RTIBool skip_encapsulation,
-    RTIBool skip_sample, 
-    void *endpoint_plugin_qos)
-{
-    char * position = NULL;
-
-    if (endpoint_data) {} /* To avoid warnings */
-    if (endpoint_plugin_qos) {} /* To avoid warnings */
-
-    if(skip_encapsulation) {
-        if (!RTICdrStream_skipEncapsulation(stream)) {
-            return RTI_FALSE;
-        }
-
-        position = RTICdrStream_resetAlignment(stream);
-    }
-
-    if (skip_sample) {
-
-        if (!RTICdrStream_skipEnum(stream)) {
-            return RTI_FALSE;
-        }
-    }
-
-    if(skip_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
-    return RTI_TRUE;
-}
-
-unsigned int 
-ShapeFillKindPlugin_get_serialized_sample_max_size_ex(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool * overflow,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment)
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    unsigned int encapsulation_size = current_alignment;
-
-    if (endpoint_data) {} /* To avoid warnings */ 
-    if (overflow) {} /* To avoid warnings */
-
-    if (include_encapsulation) {
-
-        if (!RTICdrEncapsulation_validEncapsulationId(encapsulation_id)) {
-            return 1;
-        }
-        RTICdrStream_getEncapsulationSize(encapsulation_size);
-        encapsulation_size -= current_alignment;
-        current_alignment = 0;
-        initial_alignment = 0;
-    }
-
-    current_alignment += RTICdrType_getEnumMaxSizeSerialized(current_alignment);
-
-    if (include_encapsulation) {
-        current_alignment += encapsulation_size;
-    }
-    return  current_alignment - initial_alignment;
-}
-
 unsigned int 
 ShapeFillKindPlugin_get_serialized_sample_max_size(
     PRESTypePluginEndpointData endpoint_data,
@@ -266,7 +73,7 @@ ShapeFillKindPlugin_get_serialized_sample_max_size(
 {
     unsigned int initial_alignment = current_alignment;
 
-    current_alignment += ShapeFillKindPlugin_get_serialized_sample_max_size_ex(
+    current_alignment += PRESTypePlugin_interpretedGetSerializedSampleMaxSize(
         endpoint_data,
         NULL,
         include_encapsulation,
@@ -275,125 +82,9 @@ ShapeFillKindPlugin_get_serialized_sample_max_size(
     return current_alignment - initial_alignment;
 }
 
-unsigned int ShapeFillKindPlugin_get_serialized_sample_min_size(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment)
-{
-    unsigned int initial_alignment = current_alignment;
-
-    current_alignment += ShapeFillKindPlugin_get_serialized_sample_max_size(
-        endpoint_data,include_encapsulation,
-        encapsulation_id, current_alignment);
-
-    return current_alignment - initial_alignment;
-}
-
-/* Returns the size of the sample in its serialized form (in bytes).
-* It can also be an estimation in excess of the real buffer needed 
-* during a call to the serialize() function.
-* The value reported does not have to include the space for the
-* encapsulation flags.
-*/
-unsigned int
-ShapeFillKindPlugin_get_serialized_sample_size(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment,
-    const ShapeFillKind * sample) 
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    if (sample==NULL) {
-        return 0;
-    }
-
-    current_alignment += ShapeFillKindPlugin_get_serialized_sample_max_size(
-        endpoint_data,include_encapsulation,
-        encapsulation_id,
-        PRESTypePluginDefaultEndpointData_getAlignment(
-            endpoint_data,
-            current_alignment));
-
-    return current_alignment - initial_alignment;
-}
-
 /* --------------------------------------------------------------------------------------
 Key Management functions:
 * -------------------------------------------------------------------------------------- */
-
-RTIBool 
-ShapeFillKindPlugin_serialize_key(
-    PRESTypePluginEndpointData endpoint_data,
-    const ShapeFillKind *sample, 
-    struct RTICdrStream *stream,    
-    RTIBool serialize_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    RTIBool serialize_key,
-    void *endpoint_plugin_qos)
-{
-    return  ShapeFillKindPlugin_serialize(
-        endpoint_data, sample, stream, 
-        serialize_encapsulation, encapsulation_id, 
-        serialize_key, endpoint_plugin_qos);
-
-}
-
-RTIBool ShapeFillKindPlugin_deserialize_key_sample(
-    PRESTypePluginEndpointData endpoint_data,
-    ShapeFillKind *sample, 
-    struct RTICdrStream *stream,
-    RTIBool deserialize_encapsulation,
-    RTIBool deserialize_key,
-    void *endpoint_plugin_qos)
-{
-    try {
-
-        return  ShapeFillKindPlugin_deserialize_sample(
-            endpoint_data, sample, stream, deserialize_encapsulation, 
-            deserialize_key, endpoint_plugin_qos);
-
-    } catch (std::bad_alloc&) {
-        return RTI_FALSE;
-    }
-}
-
-unsigned int
-ShapeFillKindPlugin_get_serialized_key_max_size_ex(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool * overflow,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment)
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    current_alignment +=  ShapeFillKindPlugin_get_serialized_sample_max_size_ex(
-        endpoint_data, overflow, include_encapsulation,
-        encapsulation_id, current_alignment);
-
-    return current_alignment - initial_alignment;
-}
-
-RTIBool 
-ShapeFillKindPlugin_serialized_sample_to_key(
-    PRESTypePluginEndpointData endpoint_data,
-    ShapeFillKind *sample,
-    struct RTICdrStream *stream, 
-    RTIBool deserialize_encapsulation,  
-    RTIBool deserialize_key, 
-    void *endpoint_plugin_qos)
-{
-
-    return  ShapeFillKindPlugin_deserialize_sample(
-        endpoint_data, sample, stream, deserialize_encapsulation, 
-        deserialize_key, endpoint_plugin_qos);
-
-}
 
 /* ----------------------------------------------------------------------------
 Support functions:
@@ -444,7 +135,7 @@ ShapeTypePluginSupport_create_data_w_params(
         delete  sample;
         sample=NULL;
     }
-    return sample; 
+    return sample;
 } 
 
 ShapeType *
@@ -463,7 +154,7 @@ ShapeTypePluginSupport_create_data_ex(RTIBool allocate_pointers)
         sample=NULL;
     }
 
-    return sample; 
+    return sample;
 }
 
 ShapeType *
@@ -476,7 +167,6 @@ void
 ShapeTypePluginSupport_destroy_data_w_params(
     ShapeType *sample,
     const struct DDS_TypeDeallocationParams_t * dealloc_params) {
-
     ShapeType_finalize_w_params(sample,dealloc_params);
 
     delete  sample;
@@ -486,7 +176,6 @@ ShapeTypePluginSupport_destroy_data_w_params(
 void 
 ShapeTypePluginSupport_destroy_data_ex(
     ShapeType *sample,RTIBool deallocate_pointers) {
-
     ShapeType_finalize_ex(sample,deallocate_pointers);
 
     delete  sample;
@@ -547,6 +236,7 @@ ShapeTypePluginSupport_print_data(
         &sample->shapesize, "shapesize", indent_level + 1);    
 
 }
+
 ShapeType *
 ShapeTypePluginSupport_create_key_ex(RTIBool allocate_pointers){
     ShapeType *key = NULL;
@@ -572,7 +262,6 @@ ShapeTypePluginSupport_destroy_key_ex(
 
     delete  key;
     key=NULL;
-
 }
 
 void 
@@ -595,22 +284,57 @@ ShapeTypePlugin_on_participant_attached(
     void *container_plugin_context,
     RTICdrTypeCode *type_code)
 {
+    struct RTIXCdrInterpreterPrograms *programs = NULL;
+    struct PRESTypePluginDefaultParticipantData *pd = NULL;
+    struct RTIXCdrInterpreterProgramsGenProperty programProperty =
+    RTIXCdrInterpreterProgramsGenProperty_INITIALIZER;
+
     if (registration_data) {} /* To avoid warnings */
     if (participant_info) {} /* To avoid warnings */
     if (top_level_registration) {} /* To avoid warnings */
     if (container_plugin_context) {} /* To avoid warnings */
     if (type_code) {} /* To avoid warnings */
 
-    return PRESTypePluginDefaultParticipantData_new(participant_info);
+    pd = (struct PRESTypePluginDefaultParticipantData *)
+    PRESTypePluginDefaultParticipantData_new(participant_info);
 
+    programProperty.generateV1Encapsulation = RTI_XCDR_TRUE;
+    programProperty.generateV2Encapsulation = RTI_XCDR_TRUE;
+    programProperty.resolveAlias = RTI_XCDR_TRUE;
+    programProperty.inlineStruct = RTI_XCDR_TRUE;
+    programProperty.optimizeEnum = RTI_XCDR_TRUE;
+
+    programs = DDS_TypeCodeFactory_assert_programs_in_global_list(
+        DDS_TypeCodeFactory_get_instance(),
+        ShapeType_get_typecode(),
+        &programProperty,
+        RTI_XCDR_PROGRAM_MASK_TYPEPLUGIN);
+    if (programs == NULL) {
+        PRESTypePluginDefaultParticipantData_delete(
+            (PRESTypePluginParticipantData) pd);
+        return NULL;
+    }
+
+    pd->programs = programs;
+    return (PRESTypePluginParticipantData)pd;
 }
 
 void 
 ShapeTypePlugin_on_participant_detached(
     PRESTypePluginParticipantData participant_data)
-{
+{  		
+    if (participant_data != NULL) {
+        struct PRESTypePluginDefaultParticipantData *pd = 
+        (struct PRESTypePluginDefaultParticipantData *)participant_data;
 
-    PRESTypePluginDefaultParticipantData_delete(participant_data);
+        if (pd->programs != NULL) {
+            DDS_TypeCodeFactory_remove_programs_from_global_list(
+                DDS_TypeCodeFactory_get_instance(),
+                pd->programs);
+            pd->programs = NULL;
+        }
+        PRESTypePluginDefaultParticipantData_delete(participant_data);
+    }
 }
 
 PRESTypePluginEndpointData
@@ -621,13 +345,17 @@ ShapeTypePlugin_on_endpoint_attached(
     void *containerPluginContext)
 {
     PRESTypePluginEndpointData epd = NULL;
+    unsigned int serializedSampleMaxSize = 0;
 
-    unsigned int serializedSampleMaxSize;
-
-    unsigned int serializedKeyMaxSize;
+    unsigned int serializedKeyMaxSize = 0;
+    unsigned int serializedKeyMaxSizeV2 = 0;
 
     if (top_level_registration) {} /* To avoid warnings */
     if (containerPluginContext) {} /* To avoid warnings */
+
+    if (participant_data == NULL) {
+        return NULL;
+    } 
 
     epd = PRESTypePluginDefaultEndpointData_new(
         participant_data,
@@ -637,18 +365,25 @@ ShapeTypePlugin_on_endpoint_attached(
         (PRESTypePluginDefaultEndpointDataDestroySampleFunction)
         ShapeTypePluginSupport_destroy_data,
         (PRESTypePluginDefaultEndpointDataCreateKeyFunction)
-        ShapeTypePluginSupport_create_key ,            
-        (PRESTypePluginDefaultEndpointDataDestroyKeyFunction)
+        ShapeTypePluginSupport_create_key ,            (PRESTypePluginDefaultEndpointDataDestroyKeyFunction)
         ShapeTypePluginSupport_destroy_key);
 
     if (epd == NULL) {
         return NULL;
     } 
+
     serializedKeyMaxSize =  ShapeTypePlugin_get_serialized_key_max_size(
         epd,RTI_FALSE,RTI_CDR_ENCAPSULATION_ID_CDR_BE,0);
+    serializedKeyMaxSizeV2 =  ShapeTypePlugin_get_serialized_key_max_size_for_keyhash(
+        epd,
+        RTI_CDR_ENCAPSULATION_ID_CDR2_BE,
+        0);
 
     if(!PRESTypePluginDefaultEndpointData_createMD5StreamWithInfo(
-        epd,endpoint_info,serializedKeyMaxSize))  
+        epd,
+        endpoint_info,
+        serializedKeyMaxSize,
+        serializedKeyMaxSizeV2))  
     {
         PRESTypePluginDefaultEndpointData_delete(epd);
         return NULL;
@@ -657,7 +392,6 @@ ShapeTypePlugin_on_endpoint_attached(
     if (endpoint_info->endpointKind == PRES_TYPEPLUGIN_ENDPOINT_WRITER) {
         serializedSampleMaxSize = ShapeTypePlugin_get_serialized_sample_max_size(
             epd,RTI_FALSE,RTI_CDR_ENCAPSULATION_ID_CDR_BE,0);
-
         PRESTypePluginDefaultEndpointData_setMaxSizeSerializedSample(epd, serializedSampleMaxSize);
 
         if (PRESTypePluginDefaultEndpointData_createWriterPool(
@@ -666,7 +400,7 @@ ShapeTypePlugin_on_endpoint_attached(
             (PRESTypePluginGetSerializedSampleMaxSizeFunction)
             ShapeTypePlugin_get_serialized_sample_max_size, epd,
             (PRESTypePluginGetSerializedSampleSizeFunction)
-            ShapeTypePlugin_get_serialized_sample_size,
+            PRESTypePlugin_interpretedGetSerializedSampleSize,
             epd) == RTI_FALSE) {
             PRESTypePluginDefaultEndpointData_delete(epd);
             return NULL;
@@ -679,8 +413,7 @@ ShapeTypePlugin_on_endpoint_attached(
 void 
 ShapeTypePlugin_on_endpoint_detached(
     PRESTypePluginEndpointData endpoint_data)
-{  
-
+{
     PRESTypePluginDefaultEndpointData_delete(endpoint_data);
 }
 
@@ -690,7 +423,6 @@ ShapeTypePlugin_return_sample(
     ShapeType *sample,
     void *handle)
 {
-
     ShapeType_finalize_optional_members(sample, RTI_TRUE);
 
     PRESTypePluginDefaultEndpointData_returnSample(
@@ -717,151 +449,58 @@ ShapeTypePlugin_get_serialized_sample_max_size(
     RTIEncapsulationId encapsulation_id,
     unsigned int current_alignment);
 
-RTIBool 
-ShapeTypePlugin_serialize(
-    PRESTypePluginEndpointData endpoint_data,
-    const ShapeType *sample, 
-    struct RTICdrStream *stream,    
-    RTIBool serialize_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    RTIBool serialize_sample, 
-    void *endpoint_plugin_qos)
-{
-    char * position = NULL;
-    RTIBool retval = RTI_TRUE;
-
-    if (endpoint_data) {} /* To avoid warnings */
-    if (endpoint_plugin_qos) {} /* To avoid warnings */
-
-    if(serialize_encapsulation) {
-        if (!RTICdrStream_serializeAndSetCdrEncapsulation(stream , encapsulation_id)) {
-            return RTI_FALSE;
-        }
-
-        position = RTICdrStream_resetAlignment(stream);
-    }
-
-    if(serialize_sample) {
-
-        if (!RTICdrStream_serializeString(
-            stream, sample->color, (128) + 1)) {
-            return RTI_FALSE;
-        }
-
-        if (!RTICdrStream_serializeLong(
-            stream, &sample->x)) {
-            return RTI_FALSE;
-        }
-
-        if (!RTICdrStream_serializeLong(
-            stream, &sample->y)) {
-            return RTI_FALSE;
-        }
-
-        if (!RTICdrStream_serializeLong(
-            stream, &sample->shapesize)) {
-            return RTI_FALSE;
-        }
-
-    }
-
-    if(serialize_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
-    return retval;
-}
-
-RTIBool 
-ShapeTypePlugin_deserialize_sample(
-    PRESTypePluginEndpointData endpoint_data,
-    ShapeType *sample,
-    struct RTICdrStream *stream,   
-    RTIBool deserialize_encapsulation,
-    RTIBool deserialize_sample, 
-    void *endpoint_plugin_qos)
-{
-
-    char * position = NULL;
-
-    RTIBool done = RTI_FALSE;
-
-    try {
-
-        if (endpoint_data) {} /* To avoid warnings */
-        if (endpoint_plugin_qos) {} /* To avoid warnings */
-        if(deserialize_encapsulation) {
-
-            if (!RTICdrStream_deserializeAndSetCdrEncapsulation(stream)) {
-                return RTI_FALSE;
-            }
-
-            position = RTICdrStream_resetAlignment(stream);
-        }
-        if(deserialize_sample) {
-
-            ShapeType_initialize_ex(sample, RTI_FALSE, RTI_FALSE);
-
-            if (!RTICdrStream_deserializeStringEx(
-                stream,&sample->color, (128) + 1, RTI_FALSE)) {
-                goto fin; 
-            }
-            if (!RTICdrStream_deserializeLong(
-                stream, &sample->x)) {
-                goto fin; 
-            }
-            if (!RTICdrStream_deserializeLong(
-                stream, &sample->y)) {
-                goto fin; 
-            }
-            if (!RTICdrStream_deserializeLong(
-                stream, &sample->shapesize)) {
-                goto fin; 
-            }
-        }
-
-        done = RTI_TRUE;
-      fin:
-        if (done != RTI_TRUE && 
-        RTICdrStream_getRemainder(stream) >=
-        RTI_CDR_PARAMETER_HEADER_ALIGNMENT) {
-            return RTI_FALSE;   
-        }
-        if(deserialize_encapsulation) {
-            RTICdrStream_restoreAlignment(stream,position);
-        }
-
-        return RTI_TRUE;
-
-    } catch (std::bad_alloc&) {
-        return RTI_FALSE;
-    }
-}
-
 RTIBool
-ShapeTypePlugin_serialize_to_cdr_buffer(
-    char * buffer,
-    unsigned int * length,
-    const ShapeType *sample)
+ShapeTypePlugin_serialize_to_cdr_buffer_ex(
+    char *buffer,
+    unsigned int *length,
+    const ShapeType *sample,
+    DDS_DataRepresentationId_t representation)
 {
+    RTIEncapsulationId encapsulationId = RTI_CDR_ENCAPSULATION_ID_INVALID;
     struct RTICdrStream stream;
     struct PRESTypePluginDefaultEndpointData epd;
     RTIBool result;
+    struct PRESTypePluginDefaultParticipantData pd;
+    struct RTIXCdrTypePluginProgramContext defaultProgramConext =
+    RTIXCdrTypePluginProgramContext_INTIALIZER;
+    struct PRESTypePlugin plugin;
 
     if (length == NULL) {
         return RTI_FALSE;
     }
 
+    RTIOsapiMemory_zero(&epd, sizeof(struct PRESTypePluginDefaultEndpointData));
+    epd.programContext = defaultProgramConext;  
+    epd._participantData = &pd;
+    epd.typePlugin = &plugin;
+    epd.programContext.endpointPluginData = &epd;
+    plugin.typeCode = (struct RTICdrTypeCode *)
+    ShapeType_get_typecode();
+    pd.programs = ShapeTypePlugin_get_programs();
+    if (pd.programs == NULL) {
+        return RTI_FALSE;
+    }
+
+    encapsulationId = DDS_TypeCode_get_native_encapsulation(
+        (DDS_TypeCode *) plugin.typeCode,
+        representation);    
+    if (encapsulationId == RTI_CDR_ENCAPSULATION_ID_INVALID) {
+        return RTI_FALSE;
+    }
+
     epd._maxSizeSerializedSample =
     ShapeTypePlugin_get_serialized_sample_max_size(
-        NULL, RTI_TRUE, RTICdrEncapsulation_getNativeCdrEncapsulationId(), 0);
+        (PRESTypePluginEndpointData)&epd, 
+        RTI_TRUE, 
+        encapsulationId,
+        0);
 
     if (buffer == NULL) {
         *length = 
-        ShapeTypePlugin_get_serialized_sample_size(
+        PRESTypePlugin_interpretedGetSerializedSampleSize(
             (PRESTypePluginEndpointData)&epd,
             RTI_TRUE,
-            RTICdrEncapsulation_getNativeCdrEncapsulationId(),
+            encapsulationId,
             0,
             sample);
 
@@ -875,13 +514,30 @@ ShapeTypePlugin_serialize_to_cdr_buffer(
     RTICdrStream_init(&stream);
     RTICdrStream_set(&stream, (char *)buffer, *length);
 
-    result = ShapeTypePlugin_serialize(
-        (PRESTypePluginEndpointData)&epd, sample, &stream, 
-        RTI_TRUE, RTICdrEncapsulation_getNativeCdrEncapsulationId(), 
-        RTI_TRUE, NULL);  
+    result = PRESTypePlugin_interpretedSerialize(
+        (PRESTypePluginEndpointData)&epd,
+        sample,
+        &stream,
+        RTI_TRUE,
+        encapsulationId,
+        RTI_TRUE,
+        NULL);
 
     *length = RTICdrStream_getCurrentPositionOffset(&stream);
-    return result;     
+    return result;
+}
+
+RTIBool
+ShapeTypePlugin_serialize_to_cdr_buffer(
+    char *buffer,
+    unsigned int *length,
+    const ShapeType *sample)
+{
+    return ShapeTypePlugin_serialize_to_cdr_buffer_ex(
+        buffer,
+        length,
+        sample,
+        DDS_AUTO_DATA_REPRESENTATION);
 }
 
 RTIBool
@@ -891,17 +547,37 @@ ShapeTypePlugin_deserialize_from_cdr_buffer(
     unsigned int length)
 {
     struct RTICdrStream stream;
+    struct PRESTypePluginDefaultEndpointData epd;
+    struct RTIXCdrTypePluginProgramContext defaultProgramConext =
+    RTIXCdrTypePluginProgramContext_INTIALIZER;
+    struct PRESTypePluginDefaultParticipantData pd;
+    struct PRESTypePlugin plugin;
+
+    epd.programContext = defaultProgramConext;  
+    epd._participantData = &pd;
+    epd.typePlugin = &plugin;
+    epd.programContext.endpointPluginData = &epd;
+    plugin.typeCode = (struct RTICdrTypeCode *)
+    ShapeType_get_typecode();
+    pd.programs = ShapeTypePlugin_get_programs();
+    if (pd.programs == NULL) {
+        return RTI_FALSE;
+    }
+
+    epd._assignabilityProperty.acceptUnknownEnumValue = RTI_XCDR_TRUE;
+    epd._assignabilityProperty.acceptUnknownUnionDiscriminator = RTI_XCDR_TRUE;
 
     RTICdrStream_init(&stream);
     RTICdrStream_set(&stream, (char *)buffer, length);
 
     ShapeType_finalize_optional_members(sample, RTI_TRUE);
-    return ShapeTypePlugin_deserialize_sample( 
-        NULL, sample,
+    return PRESTypePlugin_interpretedDeserialize( 
+        (PRESTypePluginEndpointData)&epd, sample,
         &stream, RTI_TRUE, RTI_TRUE, 
         NULL);
 }
 
+#ifndef NDDS_STANDALONE_TYPE
 DDS_ReturnCode_t
 ShapeTypePlugin_data_to_string(
     const ShapeType *sample,
@@ -926,7 +602,6 @@ ShapeTypePlugin_data_to_string(
     if (property == NULL) {
         return DDS_RETCODE_BAD_PARAMETER;
     }
-
     if (!ShapeTypePlugin_serialize_to_cdr_buffer(
         NULL, 
         &length, 
@@ -946,7 +621,6 @@ ShapeTypePlugin_data_to_string(
         RTIOsapiHeap_freeBuffer(buffer);
         return DDS_RETCODE_ERROR;
     }
-
     data = DDS_DynamicData_new(
         ShapeType_get_typecode(), 
         &DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
@@ -986,141 +660,7 @@ ShapeTypePlugin_data_to_string(
     DDS_DynamicData_delete(data);
     return DDS_RETCODE_OK;
 }
-
-RTIBool 
-ShapeTypePlugin_deserialize(
-    PRESTypePluginEndpointData endpoint_data,
-    ShapeType **sample,
-    RTIBool * drop_sample,
-    struct RTICdrStream *stream,   
-    RTIBool deserialize_encapsulation,
-    RTIBool deserialize_sample, 
-    void *endpoint_plugin_qos)
-{
-
-    RTIBool result;
-    const char *METHOD_NAME = "ShapeTypePlugin_deserialize";
-    if (drop_sample) {} /* To avoid warnings */
-
-    stream->_xTypesState.unassignable = RTI_FALSE;
-    result= ShapeTypePlugin_deserialize_sample( 
-        endpoint_data, (sample != NULL)?*sample:NULL,
-        stream, deserialize_encapsulation, deserialize_sample, 
-        endpoint_plugin_qos);
-    if (result) {
-        if (stream->_xTypesState.unassignable) {
-            result = RTI_FALSE;
-        }
-    }
-    if (!result && stream->_xTypesState.unassignable ) {
-
-        RTICdrLog_exception(
-            METHOD_NAME, 
-            &RTI_CDR_LOG_UNASSIGNABLE_SAMPLE_OF_TYPE_s, 
-            "ShapeType");
-
-    }
-
-    return result;
-
-}
-
-RTIBool ShapeTypePlugin_skip(
-    PRESTypePluginEndpointData endpoint_data,
-    struct RTICdrStream *stream,   
-    RTIBool skip_encapsulation,
-    RTIBool skip_sample, 
-    void *endpoint_plugin_qos)
-{
-    char * position = NULL;
-
-    RTIBool done = RTI_FALSE;
-
-    if (endpoint_data) {} /* To avoid warnings */
-    if (endpoint_plugin_qos) {} /* To avoid warnings */
-
-    if(skip_encapsulation) {
-        if (!RTICdrStream_skipEncapsulation(stream)) {
-            return RTI_FALSE;
-        }
-
-        position = RTICdrStream_resetAlignment(stream);
-    }
-
-    if (skip_sample) {
-
-        if (!RTICdrStream_skipString (stream, (128)+1)) {
-            goto fin; 
-        }
-        if (!RTICdrStream_skipLong (stream)) {
-            goto fin; 
-        }
-        if (!RTICdrStream_skipLong (stream)) {
-            goto fin; 
-        }
-        if (!RTICdrStream_skipLong (stream)) {
-            goto fin; 
-        }
-    }
-
-    done = RTI_TRUE;
-  fin:
-    if (done != RTI_TRUE && 
-    RTICdrStream_getRemainder(stream) >=
-    RTI_CDR_PARAMETER_HEADER_ALIGNMENT) {
-        return RTI_FALSE;   
-    }
-    if(skip_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
-    return RTI_TRUE;
-}
-
-unsigned int 
-ShapeTypePlugin_get_serialized_sample_max_size_ex(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool * overflow,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment)
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    unsigned int encapsulation_size = current_alignment;
-
-    if (endpoint_data) {} /* To avoid warnings */ 
-    if (overflow) {} /* To avoid warnings */
-
-    if (include_encapsulation) {
-
-        if (!RTICdrEncapsulation_validEncapsulationId(encapsulation_id)) {
-            return 1;
-        }
-        RTICdrStream_getEncapsulationSize(encapsulation_size);
-        encapsulation_size -= current_alignment;
-        current_alignment = 0;
-        initial_alignment = 0;
-    }
-
-    current_alignment +=RTICdrType_getStringMaxSizeSerialized(
-        current_alignment, (128)+1);
-
-    current_alignment +=RTICdrType_getLongMaxSizeSerialized(
-        current_alignment);
-
-    current_alignment +=RTICdrType_getLongMaxSizeSerialized(
-        current_alignment);
-
-    current_alignment +=RTICdrType_getLongMaxSizeSerialized(
-        current_alignment);
-
-    if (include_encapsulation) {
-        current_alignment += encapsulation_size;
-    }
-    return  current_alignment - initial_alignment;
-}
+#endif
 
 unsigned int 
 ShapeTypePlugin_get_serialized_sample_max_size(
@@ -1132,7 +672,7 @@ ShapeTypePlugin_get_serialized_sample_max_size(
     unsigned int size;
     RTIBool overflow = RTI_FALSE;
 
-    size = ShapeTypePlugin_get_serialized_sample_max_size_ex(
+    size = PRESTypePlugin_interpretedGetSerializedSampleMaxSize(
         endpoint_data,&overflow,include_encapsulation,encapsulation_id,current_alignment);
 
     if (overflow) {
@@ -1140,112 +680,6 @@ ShapeTypePlugin_get_serialized_sample_max_size(
     }
 
     return size;
-}
-
-unsigned int 
-ShapeTypePlugin_get_serialized_sample_min_size(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment)
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    unsigned int encapsulation_size = current_alignment;
-
-    if (endpoint_data) {} /* To avoid warnings */ 
-
-    if (include_encapsulation) {
-
-        if (!RTICdrEncapsulation_validEncapsulationId(encapsulation_id)) {
-            return 1;
-        }
-        RTICdrStream_getEncapsulationSize(encapsulation_size);
-        encapsulation_size -= current_alignment;
-        current_alignment = 0;
-        initial_alignment = 0;
-    }
-
-    current_alignment +=RTICdrType_getStringMaxSizeSerialized(
-        current_alignment, 1);
-    current_alignment +=RTICdrType_getLongMaxSizeSerialized(
-        current_alignment);
-    current_alignment +=RTICdrType_getLongMaxSizeSerialized(
-        current_alignment);
-    current_alignment +=RTICdrType_getLongMaxSizeSerialized(
-        current_alignment);
-
-    if (include_encapsulation) {
-        current_alignment += encapsulation_size;
-    }
-    return  current_alignment - initial_alignment;
-}
-
-/* Returns the size of the sample in its serialized form (in bytes).
-* It can also be an estimation in excess of the real buffer needed 
-* during a call to the serialize() function.
-* The value reported does not have to include the space for the
-* encapsulation flags.
-*/
-unsigned int
-ShapeTypePlugin_get_serialized_sample_size(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment,
-    const ShapeType * sample) 
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    unsigned int encapsulation_size = current_alignment;
-    struct PRESTypePluginDefaultEndpointData epd;   
-
-    if (sample==NULL) {
-        return 0;
-    }
-    if (endpoint_data == NULL) {
-        endpoint_data = (PRESTypePluginEndpointData) &epd;
-        PRESTypePluginDefaultEndpointData_setBaseAlignment(
-            endpoint_data,
-            current_alignment);        
-    }
-
-    if (include_encapsulation) {
-
-        if (!RTICdrEncapsulation_validEncapsulationId(encapsulation_id)) {
-            return 1;
-        }
-        RTICdrStream_getEncapsulationSize(encapsulation_size);
-        encapsulation_size -= current_alignment;
-        current_alignment = 0;
-        initial_alignment = 0;
-        PRESTypePluginDefaultEndpointData_setBaseAlignment(
-            endpoint_data,
-            current_alignment);
-    }
-
-    current_alignment += RTICdrType_getStringSerializedSize(
-        PRESTypePluginDefaultEndpointData_getAlignment(
-            endpoint_data, current_alignment), sample->color);
-
-    current_alignment += RTICdrType_getLongMaxSizeSerialized(
-        PRESTypePluginDefaultEndpointData_getAlignment(
-            endpoint_data, current_alignment));
-
-    current_alignment += RTICdrType_getLongMaxSizeSerialized(
-        PRESTypePluginDefaultEndpointData_getAlignment(
-            endpoint_data, current_alignment));
-
-    current_alignment += RTICdrType_getLongMaxSizeSerialized(
-        PRESTypePluginDefaultEndpointData_getAlignment(
-            endpoint_data, current_alignment));
-
-    if (include_encapsulation) {
-        current_alignment += encapsulation_size;
-    }
-    return current_alignment - initial_alignment;
 }
 
 /* --------------------------------------------------------------------------------------
@@ -1256,87 +690,6 @@ PRESTypePluginKeyKind
 ShapeTypePlugin_get_key_kind(void)
 {
     return PRES_TYPEPLUGIN_USER_KEY;
-}
-
-RTIBool 
-ShapeTypePlugin_serialize_key(
-    PRESTypePluginEndpointData endpoint_data,
-    const ShapeType *sample, 
-    struct RTICdrStream *stream,    
-    RTIBool serialize_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    RTIBool serialize_key,
-    void *endpoint_plugin_qos)
-{
-    char * position = NULL;
-
-    if (endpoint_data) {} /* To avoid warnings */
-    if (endpoint_plugin_qos) {} /* To avoid warnings */
-
-    if(serialize_encapsulation) {
-        if (!RTICdrStream_serializeAndSetCdrEncapsulation(stream , encapsulation_id)) {
-            return RTI_FALSE;
-        }
-
-        position = RTICdrStream_resetAlignment(stream);
-    }
-
-    if(serialize_key) {
-
-        if (!RTICdrStream_serializeString(
-            stream, sample->color, (128) + 1)) {
-            return RTI_FALSE;
-        }
-
-    }
-
-    if(serialize_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
-    return RTI_TRUE;
-}
-
-RTIBool ShapeTypePlugin_deserialize_key_sample(
-    PRESTypePluginEndpointData endpoint_data,
-    ShapeType *sample, 
-    struct RTICdrStream *stream,
-    RTIBool deserialize_encapsulation,
-    RTIBool deserialize_key,
-    void *endpoint_plugin_qos)
-{
-    try {
-
-        char * position = NULL;
-
-        if (endpoint_data) {} /* To avoid warnings */
-        if (endpoint_plugin_qos) {} /* To avoid warnings */
-
-        if(deserialize_encapsulation) {
-
-            if (!RTICdrStream_deserializeAndSetCdrEncapsulation(stream)) {
-                return RTI_FALSE;
-            }
-
-            position = RTICdrStream_resetAlignment(stream);
-        }
-        if (deserialize_key) {
-
-            if (!RTICdrStream_deserializeStringEx(
-                stream,&sample->color, (128) + 1, RTI_FALSE)) {
-                return RTI_FALSE;
-            }
-        }
-
-        if(deserialize_encapsulation) {
-            RTICdrStream_restoreAlignment(stream,position);
-        }
-
-        return RTI_TRUE;
-
-    } catch (std::bad_alloc&) {
-        return RTI_FALSE;
-    }
 }
 
 RTIBool ShapeTypePlugin_deserialize_key(
@@ -1351,7 +704,7 @@ RTIBool ShapeTypePlugin_deserialize_key(
     RTIBool result;
     if (drop_sample) {} /* To avoid warnings */
     stream->_xTypesState.unassignable = RTI_FALSE;
-    result= ShapeTypePlugin_deserialize_key_sample(
+    result= PRESTypePlugin_interpretedDeserializeKey(
         endpoint_data, (sample != NULL)?*sample:NULL, stream,
         deserialize_encapsulation, deserialize_key, endpoint_plugin_qos);
     if (result) {
@@ -1359,45 +712,8 @@ RTIBool ShapeTypePlugin_deserialize_key(
             result = RTI_FALSE;
         }
     }
-
     return result;    
 
-}
-
-unsigned int
-ShapeTypePlugin_get_serialized_key_max_size_ex(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool * overflow,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment)
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    unsigned int encapsulation_size = current_alignment;
-
-    if (endpoint_data) {} /* To avoid warnings */
-    if (overflow) {} /* To avoid warnings */
-
-    if (include_encapsulation) {
-
-        if (!RTICdrEncapsulation_validEncapsulationId(encapsulation_id)) {
-            return 1;
-        }
-        RTICdrStream_getEncapsulationSize(encapsulation_size);
-        encapsulation_size -= current_alignment;
-        current_alignment = 0;
-        initial_alignment = 0;
-    }
-
-    current_alignment +=RTICdrType_getStringMaxSizeSerialized(
-        current_alignment, (128)+1);
-
-    if (include_encapsulation) {
-        current_alignment += encapsulation_size;
-    }
-    return current_alignment - initial_alignment;
 }
 
 unsigned int
@@ -1409,10 +725,28 @@ ShapeTypePlugin_get_serialized_key_max_size(
 {
     unsigned int size;
     RTIBool overflow = RTI_FALSE;
-
-    size = ShapeTypePlugin_get_serialized_key_max_size_ex(
+    size = PRESTypePlugin_interpretedGetSerializedKeyMaxSize(
         endpoint_data,&overflow,include_encapsulation,encapsulation_id,current_alignment);
+    if (overflow) {
+        size = RTI_CDR_MAX_SERIALIZED_SIZE;
+    }
 
+    return size;
+}
+
+unsigned int
+ShapeTypePlugin_get_serialized_key_max_size_for_keyhash(
+    PRESTypePluginEndpointData endpoint_data,
+    RTIEncapsulationId encapsulation_id,
+    unsigned int current_alignment)
+{
+    unsigned int size;
+    RTIBool overflow = RTI_FALSE;
+    size = PRESTypePlugin_interpretedGetSerializedKeyMaxSizeForKeyhash(
+        endpoint_data,
+        &overflow,
+        encapsulation_id,
+        current_alignment);
     if (overflow) {
         size = RTI_CDR_MAX_SERIALIZED_SIZE;
     }
@@ -1421,79 +755,11 @@ ShapeTypePlugin_get_serialized_key_max_size(
 }
 
 RTIBool 
-ShapeTypePlugin_serialized_sample_to_key(
-    PRESTypePluginEndpointData endpoint_data,
-    ShapeType *sample,
-    struct RTICdrStream *stream, 
-    RTIBool deserialize_encapsulation,  
-    RTIBool deserialize_key, 
-    void *endpoint_plugin_qos)
-{
-    char * position = NULL;
-
-    RTIBool done = RTI_FALSE;
-    RTIBool error = RTI_FALSE;
-
-    if (endpoint_data) {} /* To avoid warnings */
-    if (endpoint_plugin_qos) {} /* To avoid warnings */
-
-    if (stream == NULL) {
-        error = RTI_TRUE;
-        goto fin;
-    }
-    if(deserialize_encapsulation) {
-        if (!RTICdrStream_deserializeAndSetCdrEncapsulation(stream)) {
-            return RTI_FALSE;
-        }
-        position = RTICdrStream_resetAlignment(stream);
-    }
-
-    if (deserialize_key) {
-
-        if (!RTICdrStream_deserializeStringEx(
-            stream,&sample->color, (128) + 1, RTI_FALSE)) {
-            return RTI_FALSE;
-        }
-        if (!RTICdrStream_skipLong (stream)) {
-            goto fin; 
-        }
-
-        if (!RTICdrStream_skipLong (stream)) {
-            goto fin; 
-        }
-
-        if (!RTICdrStream_skipLong (stream)) {
-            goto fin; 
-        }
-
-    }
-
-    done = RTI_TRUE;
-  fin:
-    if(!error) {
-        if (done != RTI_TRUE && 
-        RTICdrStream_getRemainder(stream) >=
-        RTI_CDR_PARAMETER_HEADER_ALIGNMENT) {
-            return RTI_FALSE;   
-        }
-    } else {
-        return RTI_FALSE;
-    }       
-
-    if(deserialize_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
-    return RTI_TRUE;
-}
-
-RTIBool 
 ShapeTypePlugin_instance_to_key(
     PRESTypePluginEndpointData endpoint_data,
     ShapeTypeKeyHolder *dst, 
     const ShapeType *src)
 {
-
     if (endpoint_data) {} /* To avoid warnings */   
 
     if (!RTICdrType_copyStringEx (
@@ -1510,7 +776,6 @@ ShapeTypePlugin_key_to_instance(
     ShapeType *dst, const
     ShapeTypeKeyHolder *src)
 {
-
     if (endpoint_data) {} /* To avoid warnings */   
     if (!RTICdrType_copyStringEx (
         &dst->color, src->color, 
@@ -1524,12 +789,15 @@ RTIBool
 ShapeTypePlugin_instance_to_keyhash(
     PRESTypePluginEndpointData endpoint_data,
     DDS_KeyHash_t *keyhash,
-    const ShapeType *instance)
+    const ShapeType *instance,
+    RTIEncapsulationId encapsulationId)
 {
     struct RTICdrStream * md5Stream = NULL;
     struct RTICdrStreamState cdrState;
     char * buffer = NULL;
+    RTIXCdrBoolean iCdrv2;
 
+    iCdrv2 = RTIXCdrEncapsulationId_isCdrV2(encapsulationId);
     RTICdrStreamState_init(&cdrState);
     md5Stream = PRESTypePluginDefaultEndpointData_getMD5Stream(endpoint_data);
 
@@ -1540,22 +808,24 @@ ShapeTypePlugin_instance_to_keyhash(
     RTICdrStream_resetPosition(md5Stream);
     RTICdrStream_setDirtyBit(md5Stream, RTI_TRUE);
 
-    if (!ShapeTypePlugin_serialize_key(
+    if (!PRESTypePlugin_interpretedSerializeKeyForKeyhash(
         endpoint_data,
         instance,
-        md5Stream, 
-        RTI_FALSE, 
-        RTI_CDR_ENCAPSULATION_ID_CDR_BE, 
-        RTI_TRUE,
+        md5Stream,
+        iCdrv2?
+        RTI_CDR_ENCAPSULATION_ID_CDR2_BE:
+        RTI_CDR_ENCAPSULATION_ID_CDR_BE,
         NULL)) 
     {
         int size;
 
         RTICdrStream_pushState(md5Stream, &cdrState, -1);
 
-        size = (int)ShapeTypePlugin_get_serialized_sample_size(
+        size = (int)PRESTypePlugin_interpretedGetSerializedSampleSize(
             endpoint_data,
             RTI_FALSE,
+            iCdrv2?
+            RTI_CDR_ENCAPSULATION_ID_CDR2_BE:
             RTI_CDR_ENCAPSULATION_ID_CDR_BE,
             0,
             instance);
@@ -1578,13 +848,13 @@ ShapeTypePlugin_instance_to_keyhash(
             RTICdrStream_getBufferLength(md5Stream));
         RTICdrStream_resetPosition(md5Stream);
         RTICdrStream_setDirtyBit(md5Stream, RTI_TRUE);
-        if (!ShapeTypePlugin_serialize_key(
+        if (!PRESTypePlugin_interpretedSerializeKeyForKeyhash(
             endpoint_data,
             instance,
             md5Stream, 
-            RTI_FALSE, 
-            RTI_CDR_ENCAPSULATION_ID_CDR_BE, 
-            RTI_TRUE,
+            iCdrv2?
+            RTI_CDR_ENCAPSULATION_ID_CDR2_BE:
+            RTI_CDR_ENCAPSULATION_ID_CDR_BE,
             NULL)) 
         {
             RTICdrStream_popState(md5Stream, &cdrState);
@@ -1593,7 +863,7 @@ ShapeTypePlugin_instance_to_keyhash(
         }        
     }   
 
-    if (PRESTypePluginDefaultEndpointData_getMaxSizeSerializedKey(endpoint_data) > 
+    if (PRESTypePluginDefaultEndpointData_getMaxSizeSerializedKey(endpoint_data, iCdrv2) > 
     (unsigned int)(MIG_RTPS_KEY_HASH_MAX_LENGTH) ||
     PRESTypePluginDefaultEndpointData_forceMD5KeyHash(endpoint_data)) {
         RTICdrStream_computeMD5(md5Stream, keyhash->value);
@@ -1623,59 +893,37 @@ ShapeTypePlugin_serialized_sample_to_keyhash(
     RTIBool deserialize_encapsulation,
     void *endpoint_plugin_qos) 
 {   
-    char * position = NULL;
-
-    RTIBool done = RTI_FALSE;
-    RTIBool error = RTI_FALSE;
-    ShapeType * sample=NULL;
-
-    if (endpoint_plugin_qos) {} /* To avoid warnings */
-    if (stream == NULL) {
-        error = RTI_TRUE;
-        goto fin;
-    }
-
-    if(deserialize_encapsulation) {
-        if (!RTICdrStream_deserializeAndSetCdrEncapsulation(stream)) {
-            return RTI_FALSE;
-        }
-
-        position = RTICdrStream_resetAlignment(stream);
-    }
-
+    ShapeType * sample = NULL;
     sample = (ShapeType *)
     PRESTypePluginDefaultEndpointData_getTempSample(endpoint_data);
-
     if (sample == NULL) {
         return RTI_FALSE;
     }
 
-    if (!RTICdrStream_deserializeStringEx(
-        stream,&sample->color, (128) + 1, RTI_FALSE)) {
+    if (!PRESTypePlugin_interpretedSerializedSampleToKey(
+        endpoint_data,
+        sample,
+        stream, 
+        deserialize_encapsulation, 
+        RTI_TRUE,
+        endpoint_plugin_qos)) {
         return RTI_FALSE;
     }
-    done = RTI_TRUE;
-  fin:
-    if(!error) {
-        if (done != RTI_TRUE && 
-        RTICdrStream_getRemainder(stream) >=
-        RTI_CDR_PARAMETER_HEADER_ALIGNMENT) {
-            return RTI_FALSE;   
-        }
-    } else {
-        return RTI_FALSE;
-    } 
-
-    if(deserialize_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
     if (!ShapeTypePlugin_instance_to_keyhash(
-        endpoint_data, keyhash, sample)) {
+        endpoint_data, 
+        keyhash, 
+        sample,
+        RTICdrStream_getEncapsulationKind(stream))) {
         return RTI_FALSE;
     }
-
     return RTI_TRUE;
+}
+
+struct RTIXCdrInterpreterPrograms *ShapeTypePlugin_get_programs()
+{
+    return ::rti::xcdr::get_cdr_serialization_programs<
+    ShapeType, 
+    true, true, true>();
 }
 
 /* ------------------------------------------------------------------------
@@ -1719,27 +967,27 @@ struct PRESTypePlugin *ShapeTypePlugin_new(void)
     plugin->destroySampleFnc =
     (PRESTypePluginDestroySampleFunction)
     ShapeTypePlugin_destroy_sample;
+    plugin->finalizeOptionalMembersFnc =
+    (PRESTypePluginFinalizeOptionalMembersFunction)
+    ShapeType_finalize_optional_members;
 
-    plugin->serializeFnc =
-    (PRESTypePluginSerializeFunction)
-    ShapeTypePlugin_serialize;
+    plugin->serializeFnc = 
+    (PRESTypePluginSerializeFunction) PRESTypePlugin_interpretedSerialize;
     plugin->deserializeFnc =
-    (PRESTypePluginDeserializeFunction)
-    ShapeTypePlugin_deserialize;
+    (PRESTypePluginDeserializeFunction) PRESTypePlugin_interpretedDeserializeWithAlloc;
     plugin->getSerializedSampleMaxSizeFnc =
     (PRESTypePluginGetSerializedSampleMaxSizeFunction)
     ShapeTypePlugin_get_serialized_sample_max_size;
     plugin->getSerializedSampleMinSizeFnc =
     (PRESTypePluginGetSerializedSampleMinSizeFunction)
-    ShapeTypePlugin_get_serialized_sample_min_size;
-
+    PRESTypePlugin_interpretedGetSerializedSampleMinSize;
+    plugin->getDeserializedSampleMaxSizeFnc = NULL; 
     plugin->getSampleFnc =
     (PRESTypePluginGetSampleFunction)
     ShapeTypePlugin_get_sample;
     plugin->returnSampleFnc =
     (PRESTypePluginReturnSampleFunction)
     ShapeTypePlugin_return_sample;
-
     plugin->getKeyKindFnc =
     (PRESTypePluginGetKeyKindFunction)
     ShapeTypePlugin_get_key_kind;
@@ -1749,13 +997,13 @@ struct PRESTypePlugin *ShapeTypePlugin_new(void)
     ShapeTypePlugin_get_serialized_key_max_size;
     plugin->serializeKeyFnc =
     (PRESTypePluginSerializeKeyFunction)
-    ShapeTypePlugin_serialize_key;
+    PRESTypePlugin_interpretedSerializeKey;
     plugin->deserializeKeyFnc =
     (PRESTypePluginDeserializeKeyFunction)
     ShapeTypePlugin_deserialize_key;
     plugin->deserializeKeySampleFnc =
     (PRESTypePluginDeserializeKeySampleFunction)
-    ShapeTypePlugin_deserialize_key_sample;
+    PRESTypePlugin_interpretedDeserializeKey;
 
     plugin-> instanceToKeyHashFnc = 
     (PRESTypePluginInstanceToKeyHashFunction)
@@ -1778,8 +1026,11 @@ struct PRESTypePlugin *ShapeTypePlugin_new(void)
     (PRESTypePluginKeyToInstanceFunction)
     ShapeTypePlugin_key_to_instance;
     plugin->serializedKeyToKeyHashFnc = NULL; /* Not supported yet */
+    #ifdef NDDS_STANDALONE_TYPE
+    plugin->typeCode = NULL; 
+    #else
     plugin->typeCode =  (struct RTICdrTypeCode *)ShapeType_get_typecode();
-
+    #endif
     plugin->languageKind = PRES_TYPEPLUGIN_CPP_LANG;
 
     /* Serialized buffer */
@@ -1789,12 +1040,20 @@ struct PRESTypePlugin *ShapeTypePlugin_new(void)
     plugin->returnBuffer = 
     (PRESTypePluginReturnBufferFunction)
     ShapeTypePlugin_return_buffer;
+    plugin->getBufferWithParams = NULL;
+    plugin->returnBufferWithParams = NULL;  
     plugin->getSerializedSampleSizeFnc =
     (PRESTypePluginGetSerializedSampleSizeFunction)
-    ShapeTypePlugin_get_serialized_sample_size;
+    PRESTypePlugin_interpretedGetSerializedSampleSize;
+
+    plugin->getWriterLoanedSampleFnc = NULL; 
+    plugin->returnWriterLoanedSampleFnc = NULL;
+    plugin->returnWriterLoanedSampleFromCookieFnc = NULL;
+    plugin->validateWriterLoanedSampleFnc = NULL;
+    plugin->setWriterLoanedSampleSerializedStateFnc = NULL;
 
     plugin->endpointTypeName = ShapeTypeTYPENAME;
-
+    plugin->isMetpType = RTI_FALSE;
     return plugin;
 }
 
@@ -1827,7 +1086,7 @@ ShapeTypeExtendedPluginSupport_create_data_w_params(
         delete  sample;
         sample=NULL;
     }
-    return sample; 
+    return sample;
 } 
 
 ShapeTypeExtended *
@@ -1846,7 +1105,7 @@ ShapeTypeExtendedPluginSupport_create_data_ex(RTIBool allocate_pointers)
         sample=NULL;
     }
 
-    return sample; 
+    return sample;
 }
 
 ShapeTypeExtended *
@@ -1859,7 +1118,6 @@ void
 ShapeTypeExtendedPluginSupport_destroy_data_w_params(
     ShapeTypeExtended *sample,
     const struct DDS_TypeDeallocationParams_t * dealloc_params) {
-
     ShapeTypeExtended_finalize_w_params(sample,dealloc_params);
 
     delete  sample;
@@ -1869,7 +1127,6 @@ ShapeTypeExtendedPluginSupport_destroy_data_w_params(
 void 
 ShapeTypeExtendedPluginSupport_destroy_data_ex(
     ShapeTypeExtended *sample,RTIBool deallocate_pointers) {
-
     ShapeTypeExtended_finalize_ex(sample,deallocate_pointers);
 
     delete  sample;
@@ -1921,6 +1178,7 @@ ShapeTypeExtendedPluginSupport_print_data(
         &sample->angle, "angle", indent_level + 1);    
 
 }
+
 ShapeTypeExtended *
 ShapeTypeExtendedPluginSupport_create_key_ex(RTIBool allocate_pointers){
     ShapeTypeExtended *key = NULL;
@@ -1946,7 +1204,6 @@ ShapeTypeExtendedPluginSupport_destroy_key_ex(
 
     delete  key;
     key=NULL;
-
 }
 
 void 
@@ -1969,22 +1226,57 @@ ShapeTypeExtendedPlugin_on_participant_attached(
     void *container_plugin_context,
     RTICdrTypeCode *type_code)
 {
+    struct RTIXCdrInterpreterPrograms *programs = NULL;
+    struct PRESTypePluginDefaultParticipantData *pd = NULL;
+    struct RTIXCdrInterpreterProgramsGenProperty programProperty =
+    RTIXCdrInterpreterProgramsGenProperty_INITIALIZER;
+
     if (registration_data) {} /* To avoid warnings */
     if (participant_info) {} /* To avoid warnings */
     if (top_level_registration) {} /* To avoid warnings */
     if (container_plugin_context) {} /* To avoid warnings */
     if (type_code) {} /* To avoid warnings */
 
-    return PRESTypePluginDefaultParticipantData_new(participant_info);
+    pd = (struct PRESTypePluginDefaultParticipantData *)
+    PRESTypePluginDefaultParticipantData_new(participant_info);
 
+    programProperty.generateV1Encapsulation = RTI_XCDR_TRUE;
+    programProperty.generateV2Encapsulation = RTI_XCDR_TRUE;
+    programProperty.resolveAlias = RTI_XCDR_TRUE;
+    programProperty.inlineStruct = RTI_XCDR_TRUE;
+    programProperty.optimizeEnum = RTI_XCDR_TRUE;
+
+    programs = DDS_TypeCodeFactory_assert_programs_in_global_list(
+        DDS_TypeCodeFactory_get_instance(),
+        ShapeTypeExtended_get_typecode(),
+        &programProperty,
+        RTI_XCDR_PROGRAM_MASK_TYPEPLUGIN);
+    if (programs == NULL) {
+        PRESTypePluginDefaultParticipantData_delete(
+            (PRESTypePluginParticipantData) pd);
+        return NULL;
+    }
+
+    pd->programs = programs;
+    return (PRESTypePluginParticipantData)pd;
 }
 
 void 
 ShapeTypeExtendedPlugin_on_participant_detached(
     PRESTypePluginParticipantData participant_data)
-{
+{  		
+    if (participant_data != NULL) {
+        struct PRESTypePluginDefaultParticipantData *pd = 
+        (struct PRESTypePluginDefaultParticipantData *)participant_data;
 
-    PRESTypePluginDefaultParticipantData_delete(participant_data);
+        if (pd->programs != NULL) {
+            DDS_TypeCodeFactory_remove_programs_from_global_list(
+                DDS_TypeCodeFactory_get_instance(),
+                pd->programs);
+            pd->programs = NULL;
+        }
+        PRESTypePluginDefaultParticipantData_delete(participant_data);
+    }
 }
 
 PRESTypePluginEndpointData
@@ -1995,13 +1287,17 @@ ShapeTypeExtendedPlugin_on_endpoint_attached(
     void *containerPluginContext)
 {
     PRESTypePluginEndpointData epd = NULL;
+    unsigned int serializedSampleMaxSize = 0;
 
-    unsigned int serializedSampleMaxSize;
-
-    unsigned int serializedKeyMaxSize;
+    unsigned int serializedKeyMaxSize = 0;
+    unsigned int serializedKeyMaxSizeV2 = 0;
 
     if (top_level_registration) {} /* To avoid warnings */
     if (containerPluginContext) {} /* To avoid warnings */
+
+    if (participant_data == NULL) {
+        return NULL;
+    } 
 
     epd = PRESTypePluginDefaultEndpointData_new(
         participant_data,
@@ -2011,18 +1307,25 @@ ShapeTypeExtendedPlugin_on_endpoint_attached(
         (PRESTypePluginDefaultEndpointDataDestroySampleFunction)
         ShapeTypeExtendedPluginSupport_destroy_data,
         (PRESTypePluginDefaultEndpointDataCreateKeyFunction)
-        ShapeTypeExtendedPluginSupport_create_key ,            
-        (PRESTypePluginDefaultEndpointDataDestroyKeyFunction)
+        ShapeTypeExtendedPluginSupport_create_key ,            (PRESTypePluginDefaultEndpointDataDestroyKeyFunction)
         ShapeTypeExtendedPluginSupport_destroy_key);
 
     if (epd == NULL) {
         return NULL;
     } 
+
     serializedKeyMaxSize =  ShapeTypeExtendedPlugin_get_serialized_key_max_size(
         epd,RTI_FALSE,RTI_CDR_ENCAPSULATION_ID_CDR_BE,0);
+    serializedKeyMaxSizeV2 =  ShapeTypeExtendedPlugin_get_serialized_key_max_size_for_keyhash(
+        epd,
+        RTI_CDR_ENCAPSULATION_ID_CDR2_BE,
+        0);
 
     if(!PRESTypePluginDefaultEndpointData_createMD5StreamWithInfo(
-        epd,endpoint_info,serializedKeyMaxSize))  
+        epd,
+        endpoint_info,
+        serializedKeyMaxSize,
+        serializedKeyMaxSizeV2))  
     {
         PRESTypePluginDefaultEndpointData_delete(epd);
         return NULL;
@@ -2031,7 +1334,6 @@ ShapeTypeExtendedPlugin_on_endpoint_attached(
     if (endpoint_info->endpointKind == PRES_TYPEPLUGIN_ENDPOINT_WRITER) {
         serializedSampleMaxSize = ShapeTypeExtendedPlugin_get_serialized_sample_max_size(
             epd,RTI_FALSE,RTI_CDR_ENCAPSULATION_ID_CDR_BE,0);
-
         PRESTypePluginDefaultEndpointData_setMaxSizeSerializedSample(epd, serializedSampleMaxSize);
 
         if (PRESTypePluginDefaultEndpointData_createWriterPool(
@@ -2040,7 +1342,7 @@ ShapeTypeExtendedPlugin_on_endpoint_attached(
             (PRESTypePluginGetSerializedSampleMaxSizeFunction)
             ShapeTypeExtendedPlugin_get_serialized_sample_max_size, epd,
             (PRESTypePluginGetSerializedSampleSizeFunction)
-            ShapeTypeExtendedPlugin_get_serialized_sample_size,
+            PRESTypePlugin_interpretedGetSerializedSampleSize,
             epd) == RTI_FALSE) {
             PRESTypePluginDefaultEndpointData_delete(epd);
             return NULL;
@@ -2053,8 +1355,7 @@ ShapeTypeExtendedPlugin_on_endpoint_attached(
 void 
 ShapeTypeExtendedPlugin_on_endpoint_detached(
     PRESTypePluginEndpointData endpoint_data)
-{  
-
+{
     PRESTypePluginDefaultEndpointData_delete(endpoint_data);
 }
 
@@ -2064,7 +1365,6 @@ ShapeTypeExtendedPlugin_return_sample(
     ShapeTypeExtended *sample,
     void *handle)
 {
-
     ShapeTypeExtended_finalize_optional_members(sample, RTI_TRUE);
 
     PRESTypePluginDefaultEndpointData_returnSample(
@@ -2091,148 +1391,58 @@ ShapeTypeExtendedPlugin_get_serialized_sample_max_size(
     RTIEncapsulationId encapsulation_id,
     unsigned int current_alignment);
 
-RTIBool 
-ShapeTypeExtendedPlugin_serialize(
-    PRESTypePluginEndpointData endpoint_data,
-    const ShapeTypeExtended *sample, 
-    struct RTICdrStream *stream,    
-    RTIBool serialize_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    RTIBool serialize_sample, 
-    void *endpoint_plugin_qos)
-{
-    char * position = NULL;
-    RTIBool retval = RTI_TRUE;
-
-    if(serialize_encapsulation) {
-        if (!RTICdrStream_serializeAndSetCdrEncapsulation(stream , encapsulation_id)) {
-            return RTI_FALSE;
-        }
-
-        position = RTICdrStream_resetAlignment(stream);
-    }
-
-    if(serialize_sample) {
-
-        if (!ShapeTypePlugin_serialize(endpoint_data,
-        (const ShapeType*)sample,stream,RTI_FALSE,encapsulation_id,
-        RTI_TRUE,endpoint_plugin_qos)) {
-            return RTI_FALSE;
-        }
-
-        if(!ShapeFillKindPlugin_serialize(
-            endpoint_data,
-            (const ShapeFillKind*) &sample->fillKind,
-            stream,
-            RTI_FALSE, encapsulation_id,
-            RTI_TRUE,
-            endpoint_plugin_qos)) {
-            return RTI_FALSE;
-        }
-
-        if (!RTICdrStream_serializeFloat(
-            stream, &sample->angle)) {
-            return RTI_FALSE;
-        }
-
-    }
-
-    if(serialize_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
-    return retval;
-}
-
-RTIBool 
-ShapeTypeExtendedPlugin_deserialize_sample(
-    PRESTypePluginEndpointData endpoint_data,
-    ShapeTypeExtended *sample,
-    struct RTICdrStream *stream,   
-    RTIBool deserialize_encapsulation,
-    RTIBool deserialize_sample, 
-    void *endpoint_plugin_qos)
-{
-
-    char * position = NULL;
-
-    RTIBool done = RTI_FALSE;
-
-    try {
-
-        if(deserialize_encapsulation) {
-
-            if (!RTICdrStream_deserializeAndSetCdrEncapsulation(stream)) {
-                return RTI_FALSE;
-            }
-
-            position = RTICdrStream_resetAlignment(stream);
-        }
-        if(deserialize_sample) {
-
-            ShapeTypeExtended_initialize_ex(sample, RTI_FALSE, RTI_FALSE);
-            if (!ShapeTypePlugin_deserialize_sample(endpoint_data,
-            (ShapeType *)sample,stream,RTI_FALSE,RTI_TRUE,
-            endpoint_plugin_qos)) {
-                return RTI_FALSE;
-            }
-
-            if(!ShapeFillKindPlugin_deserialize_sample(
-                endpoint_data,
-                &sample->fillKind,
-                stream,
-                RTI_FALSE, RTI_TRUE,
-                endpoint_plugin_qos)) {
-                goto fin; 
-            }
-            if (!RTICdrStream_deserializeFloat(
-                stream, &sample->angle)) {
-                goto fin; 
-            }
-        }
-
-        done = RTI_TRUE;
-      fin:
-        if (done != RTI_TRUE && 
-        RTICdrStream_getRemainder(stream) >=
-        RTI_CDR_PARAMETER_HEADER_ALIGNMENT) {
-            return RTI_FALSE;   
-        }
-        if(deserialize_encapsulation) {
-            RTICdrStream_restoreAlignment(stream,position);
-        }
-
-        return RTI_TRUE;
-
-    } catch (std::bad_alloc&) {
-        return RTI_FALSE;
-    }
-}
-
 RTIBool
-ShapeTypeExtendedPlugin_serialize_to_cdr_buffer(
-    char * buffer,
-    unsigned int * length,
-    const ShapeTypeExtended *sample)
+ShapeTypeExtendedPlugin_serialize_to_cdr_buffer_ex(
+    char *buffer,
+    unsigned int *length,
+    const ShapeTypeExtended *sample,
+    DDS_DataRepresentationId_t representation)
 {
+    RTIEncapsulationId encapsulationId = RTI_CDR_ENCAPSULATION_ID_INVALID;
     struct RTICdrStream stream;
     struct PRESTypePluginDefaultEndpointData epd;
     RTIBool result;
+    struct PRESTypePluginDefaultParticipantData pd;
+    struct RTIXCdrTypePluginProgramContext defaultProgramConext =
+    RTIXCdrTypePluginProgramContext_INTIALIZER;
+    struct PRESTypePlugin plugin;
 
     if (length == NULL) {
         return RTI_FALSE;
     }
 
+    RTIOsapiMemory_zero(&epd, sizeof(struct PRESTypePluginDefaultEndpointData));
+    epd.programContext = defaultProgramConext;  
+    epd._participantData = &pd;
+    epd.typePlugin = &plugin;
+    epd.programContext.endpointPluginData = &epd;
+    plugin.typeCode = (struct RTICdrTypeCode *)
+    ShapeTypeExtended_get_typecode();
+    pd.programs = ShapeTypeExtendedPlugin_get_programs();
+    if (pd.programs == NULL) {
+        return RTI_FALSE;
+    }
+
+    encapsulationId = DDS_TypeCode_get_native_encapsulation(
+        (DDS_TypeCode *) plugin.typeCode,
+        representation);    
+    if (encapsulationId == RTI_CDR_ENCAPSULATION_ID_INVALID) {
+        return RTI_FALSE;
+    }
+
     epd._maxSizeSerializedSample =
     ShapeTypeExtendedPlugin_get_serialized_sample_max_size(
-        NULL, RTI_TRUE, RTICdrEncapsulation_getNativeCdrEncapsulationId(), 0);
+        (PRESTypePluginEndpointData)&epd, 
+        RTI_TRUE, 
+        encapsulationId,
+        0);
 
     if (buffer == NULL) {
         *length = 
-        ShapeTypeExtendedPlugin_get_serialized_sample_size(
+        PRESTypePlugin_interpretedGetSerializedSampleSize(
             (PRESTypePluginEndpointData)&epd,
             RTI_TRUE,
-            RTICdrEncapsulation_getNativeCdrEncapsulationId(),
+            encapsulationId,
             0,
             sample);
 
@@ -2246,13 +1456,30 @@ ShapeTypeExtendedPlugin_serialize_to_cdr_buffer(
     RTICdrStream_init(&stream);
     RTICdrStream_set(&stream, (char *)buffer, *length);
 
-    result = ShapeTypeExtendedPlugin_serialize(
-        (PRESTypePluginEndpointData)&epd, sample, &stream, 
-        RTI_TRUE, RTICdrEncapsulation_getNativeCdrEncapsulationId(), 
-        RTI_TRUE, NULL);  
+    result = PRESTypePlugin_interpretedSerialize(
+        (PRESTypePluginEndpointData)&epd,
+        sample,
+        &stream,
+        RTI_TRUE,
+        encapsulationId,
+        RTI_TRUE,
+        NULL);
 
     *length = RTICdrStream_getCurrentPositionOffset(&stream);
-    return result;     
+    return result;
+}
+
+RTIBool
+ShapeTypeExtendedPlugin_serialize_to_cdr_buffer(
+    char *buffer,
+    unsigned int *length,
+    const ShapeTypeExtended *sample)
+{
+    return ShapeTypeExtendedPlugin_serialize_to_cdr_buffer_ex(
+        buffer,
+        length,
+        sample,
+        DDS_AUTO_DATA_REPRESENTATION);
 }
 
 RTIBool
@@ -2262,17 +1489,37 @@ ShapeTypeExtendedPlugin_deserialize_from_cdr_buffer(
     unsigned int length)
 {
     struct RTICdrStream stream;
+    struct PRESTypePluginDefaultEndpointData epd;
+    struct RTIXCdrTypePluginProgramContext defaultProgramConext =
+    RTIXCdrTypePluginProgramContext_INTIALIZER;
+    struct PRESTypePluginDefaultParticipantData pd;
+    struct PRESTypePlugin plugin;
+
+    epd.programContext = defaultProgramConext;  
+    epd._participantData = &pd;
+    epd.typePlugin = &plugin;
+    epd.programContext.endpointPluginData = &epd;
+    plugin.typeCode = (struct RTICdrTypeCode *)
+    ShapeTypeExtended_get_typecode();
+    pd.programs = ShapeTypeExtendedPlugin_get_programs();
+    if (pd.programs == NULL) {
+        return RTI_FALSE;
+    }
+
+    epd._assignabilityProperty.acceptUnknownEnumValue = RTI_XCDR_TRUE;
+    epd._assignabilityProperty.acceptUnknownUnionDiscriminator = RTI_XCDR_TRUE;
 
     RTICdrStream_init(&stream);
     RTICdrStream_set(&stream, (char *)buffer, length);
 
     ShapeTypeExtended_finalize_optional_members(sample, RTI_TRUE);
-    return ShapeTypeExtendedPlugin_deserialize_sample( 
-        NULL, sample,
+    return PRESTypePlugin_interpretedDeserialize( 
+        (PRESTypePluginEndpointData)&epd, sample,
         &stream, RTI_TRUE, RTI_TRUE, 
         NULL);
 }
 
+#ifndef NDDS_STANDALONE_TYPE
 DDS_ReturnCode_t
 ShapeTypeExtendedPlugin_data_to_string(
     const ShapeTypeExtended *sample,
@@ -2297,7 +1544,6 @@ ShapeTypeExtendedPlugin_data_to_string(
     if (property == NULL) {
         return DDS_RETCODE_BAD_PARAMETER;
     }
-
     if (!ShapeTypeExtendedPlugin_serialize_to_cdr_buffer(
         NULL, 
         &length, 
@@ -2317,7 +1563,6 @@ ShapeTypeExtendedPlugin_data_to_string(
         RTIOsapiHeap_freeBuffer(buffer);
         return DDS_RETCODE_ERROR;
     }
-
     data = DDS_DynamicData_new(
         ShapeTypeExtended_get_typecode(), 
         &DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
@@ -2357,136 +1602,7 @@ ShapeTypeExtendedPlugin_data_to_string(
     DDS_DynamicData_delete(data);
     return DDS_RETCODE_OK;
 }
-
-RTIBool 
-ShapeTypeExtendedPlugin_deserialize(
-    PRESTypePluginEndpointData endpoint_data,
-    ShapeTypeExtended **sample,
-    RTIBool * drop_sample,
-    struct RTICdrStream *stream,   
-    RTIBool deserialize_encapsulation,
-    RTIBool deserialize_sample, 
-    void *endpoint_plugin_qos)
-{
-
-    RTIBool result;
-    const char *METHOD_NAME = "ShapeTypeExtendedPlugin_deserialize";
-    if (drop_sample) {} /* To avoid warnings */
-
-    stream->_xTypesState.unassignable = RTI_FALSE;
-    result= ShapeTypeExtendedPlugin_deserialize_sample( 
-        endpoint_data, (sample != NULL)?*sample:NULL,
-        stream, deserialize_encapsulation, deserialize_sample, 
-        endpoint_plugin_qos);
-    if (result) {
-        if (stream->_xTypesState.unassignable) {
-            result = RTI_FALSE;
-        }
-    }
-    if (!result && stream->_xTypesState.unassignable ) {
-
-        RTICdrLog_exception(
-            METHOD_NAME, 
-            &RTI_CDR_LOG_UNASSIGNABLE_SAMPLE_OF_TYPE_s, 
-            "ShapeTypeExtended");
-
-    }
-
-    return result;
-
-}
-
-RTIBool ShapeTypeExtendedPlugin_skip(
-    PRESTypePluginEndpointData endpoint_data,
-    struct RTICdrStream *stream,   
-    RTIBool skip_encapsulation,
-    RTIBool skip_sample, 
-    void *endpoint_plugin_qos)
-{
-    char * position = NULL;
-
-    RTIBool done = RTI_FALSE;
-
-    if(skip_encapsulation) {
-        if (!RTICdrStream_skipEncapsulation(stream)) {
-            return RTI_FALSE;
-        }
-
-        position = RTICdrStream_resetAlignment(stream);
-    }
-
-    if (skip_sample) {
-
-        if (!ShapeTypePlugin_skip(endpoint_data,
-        stream,RTI_FALSE,RTI_TRUE,
-        endpoint_plugin_qos)) {
-            return RTI_FALSE;
-        }
-
-        if (!ShapeFillKindPlugin_skip(
-            endpoint_data,
-            stream, 
-            RTI_FALSE, RTI_TRUE, 
-            endpoint_plugin_qos)) {
-            goto fin; 
-        }
-        if (!RTICdrStream_skipFloat (stream)) {
-            goto fin; 
-        }
-    }
-
-    done = RTI_TRUE;
-  fin:
-    if (done != RTI_TRUE && 
-    RTICdrStream_getRemainder(stream) >=
-    RTI_CDR_PARAMETER_HEADER_ALIGNMENT) {
-        return RTI_FALSE;   
-    }
-    if(skip_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
-    return RTI_TRUE;
-}
-
-unsigned int 
-ShapeTypeExtendedPlugin_get_serialized_sample_max_size_ex(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool * overflow,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment)
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    unsigned int encapsulation_size = current_alignment;
-
-    if (include_encapsulation) {
-
-        if (!RTICdrEncapsulation_validEncapsulationId(encapsulation_id)) {
-            return 1;
-        }
-        RTICdrStream_getEncapsulationSize(encapsulation_size);
-        encapsulation_size -= current_alignment;
-        current_alignment = 0;
-        initial_alignment = 0;
-    }
-
-    current_alignment += ShapeTypePlugin_get_serialized_sample_max_size_ex(
-        endpoint_data,overflow,RTI_FALSE,encapsulation_id,current_alignment);
-
-    current_alignment +=ShapeFillKindPlugin_get_serialized_sample_max_size_ex(
-        endpoint_data, overflow, RTI_FALSE,encapsulation_id,current_alignment);
-
-    current_alignment +=RTICdrType_getFloatMaxSizeSerialized(
-        current_alignment);
-
-    if (include_encapsulation) {
-        current_alignment += encapsulation_size;
-    }
-    return  current_alignment - initial_alignment;
-}
+#endif
 
 unsigned int 
 ShapeTypeExtendedPlugin_get_serialized_sample_max_size(
@@ -2498,7 +1614,7 @@ ShapeTypeExtendedPlugin_get_serialized_sample_max_size(
     unsigned int size;
     RTIBool overflow = RTI_FALSE;
 
-    size = ShapeTypeExtendedPlugin_get_serialized_sample_max_size_ex(
+    size = PRESTypePlugin_interpretedGetSerializedSampleMaxSize(
         endpoint_data,&overflow,include_encapsulation,encapsulation_id,current_alignment);
 
     if (overflow) {
@@ -2506,100 +1622,6 @@ ShapeTypeExtendedPlugin_get_serialized_sample_max_size(
     }
 
     return size;
-}
-
-unsigned int 
-ShapeTypeExtendedPlugin_get_serialized_sample_min_size(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment)
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    unsigned int encapsulation_size = current_alignment;
-
-    if (include_encapsulation) {
-
-        if (!RTICdrEncapsulation_validEncapsulationId(encapsulation_id)) {
-            return 1;
-        }
-        RTICdrStream_getEncapsulationSize(encapsulation_size);
-        encapsulation_size -= current_alignment;
-        current_alignment = 0;
-        initial_alignment = 0;
-    }
-
-    current_alignment += ShapeTypePlugin_get_serialized_sample_min_size(
-        endpoint_data,RTI_FALSE,encapsulation_id,current_alignment);
-
-    current_alignment +=ShapeFillKindPlugin_get_serialized_sample_min_size(
-        endpoint_data,RTI_FALSE,encapsulation_id,current_alignment);
-    current_alignment +=RTICdrType_getFloatMaxSizeSerialized(
-        current_alignment);
-
-    if (include_encapsulation) {
-        current_alignment += encapsulation_size;
-    }
-    return  current_alignment - initial_alignment;
-}
-
-/* Returns the size of the sample in its serialized form (in bytes).
-* It can also be an estimation in excess of the real buffer needed 
-* during a call to the serialize() function.
-* The value reported does not have to include the space for the
-* encapsulation flags.
-*/
-unsigned int
-ShapeTypeExtendedPlugin_get_serialized_sample_size(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment,
-    const ShapeTypeExtended * sample) 
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    unsigned int encapsulation_size = current_alignment;
-    struct PRESTypePluginDefaultEndpointData epd;   
-
-    if (endpoint_data == NULL) {
-        endpoint_data = (PRESTypePluginEndpointData) &epd;
-        PRESTypePluginDefaultEndpointData_setBaseAlignment(
-            endpoint_data,
-            current_alignment);        
-    }
-
-    if (include_encapsulation) {
-
-        if (!RTICdrEncapsulation_validEncapsulationId(encapsulation_id)) {
-            return 1;
-        }
-        RTICdrStream_getEncapsulationSize(encapsulation_size);
-        encapsulation_size -= current_alignment;
-        current_alignment = 0;
-        initial_alignment = 0;
-        PRESTypePluginDefaultEndpointData_setBaseAlignment(
-            endpoint_data,
-            current_alignment);
-    }
-
-    current_alignment += ShapeTypePlugin_get_serialized_sample_size(endpoint_data,RTI_FALSE,encapsulation_id,current_alignment,(const ShapeType*)sample);   
-
-    current_alignment += ShapeFillKindPlugin_get_serialized_sample_size(
-        endpoint_data,RTI_FALSE, encapsulation_id,
-        current_alignment, (const ShapeFillKind*) &sample->fillKind);
-
-    current_alignment += RTICdrType_getFloatMaxSizeSerialized(
-        PRESTypePluginDefaultEndpointData_getAlignment(
-            endpoint_data, current_alignment));
-
-    if (include_encapsulation) {
-        current_alignment += encapsulation_size;
-    }
-    return current_alignment - initial_alignment;
 }
 
 /* --------------------------------------------------------------------------------------
@@ -2610,83 +1632,6 @@ PRESTypePluginKeyKind
 ShapeTypeExtendedPlugin_get_key_kind(void)
 {
     return PRES_TYPEPLUGIN_USER_KEY;
-}
-
-RTIBool 
-ShapeTypeExtendedPlugin_serialize_key(
-    PRESTypePluginEndpointData endpoint_data,
-    const ShapeTypeExtended *sample, 
-    struct RTICdrStream *stream,    
-    RTIBool serialize_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    RTIBool serialize_key,
-    void *endpoint_plugin_qos)
-{
-    char * position = NULL;
-
-    if(serialize_encapsulation) {
-        if (!RTICdrStream_serializeAndSetCdrEncapsulation(stream , encapsulation_id)) {
-            return RTI_FALSE;
-        }
-
-        position = RTICdrStream_resetAlignment(stream);
-    }
-
-    if(serialize_key) {
-
-        if (!ShapeTypePlugin_serialize_key(endpoint_data, 
-        (const ShapeType*)sample, stream, RTI_FALSE, 
-        encapsulation_id,RTI_TRUE, endpoint_plugin_qos)) {
-            return RTI_FALSE;
-        }
-
-    }
-
-    if(serialize_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
-    return RTI_TRUE;
-}
-
-RTIBool ShapeTypeExtendedPlugin_deserialize_key_sample(
-    PRESTypePluginEndpointData endpoint_data,
-    ShapeTypeExtended *sample, 
-    struct RTICdrStream *stream,
-    RTIBool deserialize_encapsulation,
-    RTIBool deserialize_key,
-    void *endpoint_plugin_qos)
-{
-    try {
-
-        char * position = NULL;
-
-        if(deserialize_encapsulation) {
-
-            if (!RTICdrStream_deserializeAndSetCdrEncapsulation(stream)) {
-                return RTI_FALSE;
-            }
-
-            position = RTICdrStream_resetAlignment(stream);
-        }
-        if (deserialize_key) {
-
-            if (!ShapeTypePlugin_deserialize_key_sample(endpoint_data,
-            (ShapeType*)sample,stream,RTI_FALSE,RTI_TRUE,endpoint_plugin_qos)) {
-                return RTI_FALSE;
-            }    
-
-        }
-
-        if(deserialize_encapsulation) {
-            RTICdrStream_restoreAlignment(stream,position);
-        }
-
-        return RTI_TRUE;
-
-    } catch (std::bad_alloc&) {
-        return RTI_FALSE;
-    }
 }
 
 RTIBool ShapeTypeExtendedPlugin_deserialize_key(
@@ -2701,7 +1646,7 @@ RTIBool ShapeTypeExtendedPlugin_deserialize_key(
     RTIBool result;
     if (drop_sample) {} /* To avoid warnings */
     stream->_xTypesState.unassignable = RTI_FALSE;
-    result= ShapeTypeExtendedPlugin_deserialize_key_sample(
+    result= PRESTypePlugin_interpretedDeserializeKey(
         endpoint_data, (sample != NULL)?*sample:NULL, stream,
         deserialize_encapsulation, deserialize_key, endpoint_plugin_qos);
     if (result) {
@@ -2709,45 +1654,8 @@ RTIBool ShapeTypeExtendedPlugin_deserialize_key(
             result = RTI_FALSE;
         }
     }
-
     return result;    
 
-}
-
-unsigned int
-ShapeTypeExtendedPlugin_get_serialized_key_max_size_ex(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool * overflow,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment)
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    unsigned int encapsulation_size = current_alignment;
-
-    if (include_encapsulation) {
-
-        if (!RTICdrEncapsulation_validEncapsulationId(encapsulation_id)) {
-            return 1;
-        }
-        RTICdrStream_getEncapsulationSize(encapsulation_size);
-        encapsulation_size -= current_alignment;
-        current_alignment = 0;
-        initial_alignment = 0;
-    }
-
-    current_alignment += ShapeTypePlugin_get_serialized_key_max_size_ex(
-        endpoint_data,
-        overflow,
-        RTI_FALSE, encapsulation_id,
-        current_alignment);
-
-    if (include_encapsulation) {
-        current_alignment += encapsulation_size;
-    }
-    return current_alignment - initial_alignment;
 }
 
 unsigned int
@@ -2759,10 +1667,28 @@ ShapeTypeExtendedPlugin_get_serialized_key_max_size(
 {
     unsigned int size;
     RTIBool overflow = RTI_FALSE;
-
-    size = ShapeTypeExtendedPlugin_get_serialized_key_max_size_ex(
+    size = PRESTypePlugin_interpretedGetSerializedKeyMaxSize(
         endpoint_data,&overflow,include_encapsulation,encapsulation_id,current_alignment);
+    if (overflow) {
+        size = RTI_CDR_MAX_SERIALIZED_SIZE;
+    }
 
+    return size;
+}
+
+unsigned int
+ShapeTypeExtendedPlugin_get_serialized_key_max_size_for_keyhash(
+    PRESTypePluginEndpointData endpoint_data,
+    RTIEncapsulationId encapsulation_id,
+    unsigned int current_alignment)
+{
+    unsigned int size;
+    RTIBool overflow = RTI_FALSE;
+    size = PRESTypePlugin_interpretedGetSerializedKeyMaxSizeForKeyhash(
+        endpoint_data,
+        &overflow,
+        encapsulation_id,
+        current_alignment);
     if (overflow) {
         size = RTI_CDR_MAX_SERIALIZED_SIZE;
     }
@@ -2771,82 +1697,11 @@ ShapeTypeExtendedPlugin_get_serialized_key_max_size(
 }
 
 RTIBool 
-ShapeTypeExtendedPlugin_serialized_sample_to_key(
-    PRESTypePluginEndpointData endpoint_data,
-    ShapeTypeExtended *sample,
-    struct RTICdrStream *stream, 
-    RTIBool deserialize_encapsulation,  
-    RTIBool deserialize_key, 
-    void *endpoint_plugin_qos)
-{
-    char * position = NULL;
-
-    RTIBool done = RTI_FALSE;
-    RTIBool error = RTI_FALSE;
-
-    if (endpoint_data) {} /* To avoid warnings */
-    if (endpoint_plugin_qos) {} /* To avoid warnings */
-
-    if (stream == NULL) {
-        error = RTI_TRUE;
-        goto fin;
-    }
-    if(deserialize_encapsulation) {
-        if (!RTICdrStream_deserializeAndSetCdrEncapsulation(stream)) {
-            return RTI_FALSE;
-        }
-        position = RTICdrStream_resetAlignment(stream);
-    }
-
-    if (deserialize_key) {
-
-        if (!ShapeTypePlugin_serialized_sample_to_key(endpoint_data,
-        (ShapeType *)sample,
-        stream, RTI_FALSE, RTI_TRUE,
-        endpoint_plugin_qos)) {
-            return RTI_FALSE;
-        }
-
-        if (!ShapeFillKindPlugin_skip(
-            endpoint_data,
-            stream, 
-            RTI_FALSE, RTI_TRUE, 
-            endpoint_plugin_qos)) {
-            goto fin; 
-        }
-
-        if (!RTICdrStream_skipFloat (stream)) {
-            goto fin; 
-        }
-
-    }
-
-    done = RTI_TRUE;
-  fin:
-    if(!error) {
-        if (done != RTI_TRUE && 
-        RTICdrStream_getRemainder(stream) >=
-        RTI_CDR_PARAMETER_HEADER_ALIGNMENT) {
-            return RTI_FALSE;   
-        }
-    } else {
-        return RTI_FALSE;
-    }       
-
-    if(deserialize_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
-    return RTI_TRUE;
-}
-
-RTIBool 
 ShapeTypeExtendedPlugin_instance_to_key(
     PRESTypePluginEndpointData endpoint_data,
     ShapeTypeExtendedKeyHolder *dst, 
     const ShapeTypeExtended *src)
 {
-
     if (!ShapeTypePlugin_instance_to_key(endpoint_data,(ShapeType *)dst,(const ShapeType*)src)) {
         return RTI_FALSE;
     }
@@ -2860,7 +1715,6 @@ ShapeTypeExtendedPlugin_key_to_instance(
     ShapeTypeExtended *dst, const
     ShapeTypeExtendedKeyHolder *src)
 {
-
     if (!ShapeTypePlugin_key_to_instance(endpoint_data,(ShapeType*)dst,(const ShapeType*)src)) {
         return RTI_FALSE;
     }
@@ -2871,12 +1725,15 @@ RTIBool
 ShapeTypeExtendedPlugin_instance_to_keyhash(
     PRESTypePluginEndpointData endpoint_data,
     DDS_KeyHash_t *keyhash,
-    const ShapeTypeExtended *instance)
+    const ShapeTypeExtended *instance,
+    RTIEncapsulationId encapsulationId)
 {
     struct RTICdrStream * md5Stream = NULL;
     struct RTICdrStreamState cdrState;
     char * buffer = NULL;
+    RTIXCdrBoolean iCdrv2;
 
+    iCdrv2 = RTIXCdrEncapsulationId_isCdrV2(encapsulationId);
     RTICdrStreamState_init(&cdrState);
     md5Stream = PRESTypePluginDefaultEndpointData_getMD5Stream(endpoint_data);
 
@@ -2887,22 +1744,24 @@ ShapeTypeExtendedPlugin_instance_to_keyhash(
     RTICdrStream_resetPosition(md5Stream);
     RTICdrStream_setDirtyBit(md5Stream, RTI_TRUE);
 
-    if (!ShapeTypeExtendedPlugin_serialize_key(
+    if (!PRESTypePlugin_interpretedSerializeKeyForKeyhash(
         endpoint_data,
         instance,
-        md5Stream, 
-        RTI_FALSE, 
-        RTI_CDR_ENCAPSULATION_ID_CDR_BE, 
-        RTI_TRUE,
+        md5Stream,
+        iCdrv2?
+        RTI_CDR_ENCAPSULATION_ID_CDR2_BE:
+        RTI_CDR_ENCAPSULATION_ID_CDR_BE,
         NULL)) 
     {
         int size;
 
         RTICdrStream_pushState(md5Stream, &cdrState, -1);
 
-        size = (int)ShapeTypeExtendedPlugin_get_serialized_sample_size(
+        size = (int)PRESTypePlugin_interpretedGetSerializedSampleSize(
             endpoint_data,
             RTI_FALSE,
+            iCdrv2?
+            RTI_CDR_ENCAPSULATION_ID_CDR2_BE:
             RTI_CDR_ENCAPSULATION_ID_CDR_BE,
             0,
             instance);
@@ -2925,13 +1784,13 @@ ShapeTypeExtendedPlugin_instance_to_keyhash(
             RTICdrStream_getBufferLength(md5Stream));
         RTICdrStream_resetPosition(md5Stream);
         RTICdrStream_setDirtyBit(md5Stream, RTI_TRUE);
-        if (!ShapeTypeExtendedPlugin_serialize_key(
+        if (!PRESTypePlugin_interpretedSerializeKeyForKeyhash(
             endpoint_data,
             instance,
             md5Stream, 
-            RTI_FALSE, 
-            RTI_CDR_ENCAPSULATION_ID_CDR_BE, 
-            RTI_TRUE,
+            iCdrv2?
+            RTI_CDR_ENCAPSULATION_ID_CDR2_BE:
+            RTI_CDR_ENCAPSULATION_ID_CDR_BE,
             NULL)) 
         {
             RTICdrStream_popState(md5Stream, &cdrState);
@@ -2940,7 +1799,7 @@ ShapeTypeExtendedPlugin_instance_to_keyhash(
         }        
     }   
 
-    if (PRESTypePluginDefaultEndpointData_getMaxSizeSerializedKey(endpoint_data) > 
+    if (PRESTypePluginDefaultEndpointData_getMaxSizeSerializedKey(endpoint_data, iCdrv2) > 
     (unsigned int)(MIG_RTPS_KEY_HASH_MAX_LENGTH) ||
     PRESTypePluginDefaultEndpointData_forceMD5KeyHash(endpoint_data)) {
         RTICdrStream_computeMD5(md5Stream, keyhash->value);
@@ -2970,61 +1829,37 @@ ShapeTypeExtendedPlugin_serialized_sample_to_keyhash(
     RTIBool deserialize_encapsulation,
     void *endpoint_plugin_qos) 
 {   
-    char * position = NULL;
-
-    RTIBool done = RTI_FALSE;
-    RTIBool error = RTI_FALSE;
-    ShapeTypeExtended * sample=NULL;
-
-    if (endpoint_plugin_qos) {} /* To avoid warnings */
-    if (stream == NULL) {
-        error = RTI_TRUE;
-        goto fin;
-    }
-
-    if(deserialize_encapsulation) {
-        if (!RTICdrStream_deserializeAndSetCdrEncapsulation(stream)) {
-            return RTI_FALSE;
-        }
-
-        position = RTICdrStream_resetAlignment(stream);
-    }
-
+    ShapeTypeExtended * sample = NULL;
     sample = (ShapeTypeExtended *)
     PRESTypePluginDefaultEndpointData_getTempSample(endpoint_data);
-
     if (sample == NULL) {
         return RTI_FALSE;
     }
-    if (!ShapeTypePlugin_serialized_sample_to_key(endpoint_data,
-    (ShapeType *)sample,
-    stream, RTI_FALSE, RTI_TRUE,
-    endpoint_plugin_qos)) {
+
+    if (!PRESTypePlugin_interpretedSerializedSampleToKey(
+        endpoint_data,
+        sample,
+        stream, 
+        deserialize_encapsulation, 
+        RTI_TRUE,
+        endpoint_plugin_qos)) {
         return RTI_FALSE;
     }
-
-    done = RTI_TRUE;
-  fin:
-    if(!error) {
-        if (done != RTI_TRUE && 
-        RTICdrStream_getRemainder(stream) >=
-        RTI_CDR_PARAMETER_HEADER_ALIGNMENT) {
-            return RTI_FALSE;   
-        }
-    } else {
-        return RTI_FALSE;
-    } 
-
-    if(deserialize_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
     if (!ShapeTypeExtendedPlugin_instance_to_keyhash(
-        endpoint_data, keyhash, sample)) {
+        endpoint_data, 
+        keyhash, 
+        sample,
+        RTICdrStream_getEncapsulationKind(stream))) {
         return RTI_FALSE;
     }
-
     return RTI_TRUE;
+}
+
+struct RTIXCdrInterpreterPrograms *ShapeTypeExtendedPlugin_get_programs()
+{
+    return ::rti::xcdr::get_cdr_serialization_programs<
+    ShapeTypeExtended, 
+    true, true, true>();
 }
 
 /* ------------------------------------------------------------------------
@@ -3068,27 +1903,27 @@ struct PRESTypePlugin *ShapeTypeExtendedPlugin_new(void)
     plugin->destroySampleFnc =
     (PRESTypePluginDestroySampleFunction)
     ShapeTypeExtendedPlugin_destroy_sample;
+    plugin->finalizeOptionalMembersFnc =
+    (PRESTypePluginFinalizeOptionalMembersFunction)
+    ShapeTypeExtended_finalize_optional_members;
 
-    plugin->serializeFnc =
-    (PRESTypePluginSerializeFunction)
-    ShapeTypeExtendedPlugin_serialize;
+    plugin->serializeFnc = 
+    (PRESTypePluginSerializeFunction) PRESTypePlugin_interpretedSerialize;
     plugin->deserializeFnc =
-    (PRESTypePluginDeserializeFunction)
-    ShapeTypeExtendedPlugin_deserialize;
+    (PRESTypePluginDeserializeFunction) PRESTypePlugin_interpretedDeserializeWithAlloc;
     plugin->getSerializedSampleMaxSizeFnc =
     (PRESTypePluginGetSerializedSampleMaxSizeFunction)
     ShapeTypeExtendedPlugin_get_serialized_sample_max_size;
     plugin->getSerializedSampleMinSizeFnc =
     (PRESTypePluginGetSerializedSampleMinSizeFunction)
-    ShapeTypeExtendedPlugin_get_serialized_sample_min_size;
-
+    PRESTypePlugin_interpretedGetSerializedSampleMinSize;
+    plugin->getDeserializedSampleMaxSizeFnc = NULL; 
     plugin->getSampleFnc =
     (PRESTypePluginGetSampleFunction)
     ShapeTypeExtendedPlugin_get_sample;
     plugin->returnSampleFnc =
     (PRESTypePluginReturnSampleFunction)
     ShapeTypeExtendedPlugin_return_sample;
-
     plugin->getKeyKindFnc =
     (PRESTypePluginGetKeyKindFunction)
     ShapeTypeExtendedPlugin_get_key_kind;
@@ -3098,13 +1933,13 @@ struct PRESTypePlugin *ShapeTypeExtendedPlugin_new(void)
     ShapeTypeExtendedPlugin_get_serialized_key_max_size;
     plugin->serializeKeyFnc =
     (PRESTypePluginSerializeKeyFunction)
-    ShapeTypeExtendedPlugin_serialize_key;
+    PRESTypePlugin_interpretedSerializeKey;
     plugin->deserializeKeyFnc =
     (PRESTypePluginDeserializeKeyFunction)
     ShapeTypeExtendedPlugin_deserialize_key;
     plugin->deserializeKeySampleFnc =
     (PRESTypePluginDeserializeKeySampleFunction)
-    ShapeTypeExtendedPlugin_deserialize_key_sample;
+    PRESTypePlugin_interpretedDeserializeKey;
 
     plugin-> instanceToKeyHashFnc = 
     (PRESTypePluginInstanceToKeyHashFunction)
@@ -3127,8 +1962,11 @@ struct PRESTypePlugin *ShapeTypeExtendedPlugin_new(void)
     (PRESTypePluginKeyToInstanceFunction)
     ShapeTypeExtendedPlugin_key_to_instance;
     plugin->serializedKeyToKeyHashFnc = NULL; /* Not supported yet */
+    #ifdef NDDS_STANDALONE_TYPE
+    plugin->typeCode = NULL; 
+    #else
     plugin->typeCode =  (struct RTICdrTypeCode *)ShapeTypeExtended_get_typecode();
-
+    #endif
     plugin->languageKind = PRES_TYPEPLUGIN_CPP_LANG;
 
     /* Serialized buffer */
@@ -3138,12 +1976,20 @@ struct PRESTypePlugin *ShapeTypeExtendedPlugin_new(void)
     plugin->returnBuffer = 
     (PRESTypePluginReturnBufferFunction)
     ShapeTypeExtendedPlugin_return_buffer;
+    plugin->getBufferWithParams = NULL;
+    plugin->returnBufferWithParams = NULL;  
     plugin->getSerializedSampleSizeFnc =
     (PRESTypePluginGetSerializedSampleSizeFunction)
-    ShapeTypeExtendedPlugin_get_serialized_sample_size;
+    PRESTypePlugin_interpretedGetSerializedSampleSize;
+
+    plugin->getWriterLoanedSampleFnc = NULL; 
+    plugin->returnWriterLoanedSampleFnc = NULL;
+    plugin->returnWriterLoanedSampleFromCookieFnc = NULL;
+    plugin->validateWriterLoanedSampleFnc = NULL;
+    plugin->setWriterLoanedSampleSerializedStateFnc = NULL;
 
     plugin->endpointTypeName = ShapeTypeExtendedTYPENAME;
-
+    plugin->isMetpType = RTI_FALSE;
     return plugin;
 }
 
@@ -3176,7 +2022,7 @@ PixyCamConfigPluginSupport_create_data_w_params(
         delete  sample;
         sample=NULL;
     }
-    return sample; 
+    return sample;
 } 
 
 PixyCamConfig *
@@ -3195,7 +2041,7 @@ PixyCamConfigPluginSupport_create_data_ex(RTIBool allocate_pointers)
         sample=NULL;
     }
 
-    return sample; 
+    return sample;
 }
 
 PixyCamConfig *
@@ -3208,7 +2054,6 @@ void
 PixyCamConfigPluginSupport_destroy_data_w_params(
     PixyCamConfig *sample,
     const struct DDS_TypeDeallocationParams_t * dealloc_params) {
-
     PixyCamConfig_finalize_w_params(sample,dealloc_params);
 
     delete  sample;
@@ -3218,7 +2063,6 @@ PixyCamConfigPluginSupport_destroy_data_w_params(
 void 
 PixyCamConfigPluginSupport_destroy_data_ex(
     PixyCamConfig *sample,RTIBool deallocate_pointers) {
-
     PixyCamConfig_finalize_ex(sample,deallocate_pointers);
 
     delete  sample;
@@ -3280,22 +2124,57 @@ PixyCamConfigPlugin_on_participant_attached(
     void *container_plugin_context,
     RTICdrTypeCode *type_code)
 {
+    struct RTIXCdrInterpreterPrograms *programs = NULL;
+    struct PRESTypePluginDefaultParticipantData *pd = NULL;
+    struct RTIXCdrInterpreterProgramsGenProperty programProperty =
+    RTIXCdrInterpreterProgramsGenProperty_INITIALIZER;
+
     if (registration_data) {} /* To avoid warnings */
     if (participant_info) {} /* To avoid warnings */
     if (top_level_registration) {} /* To avoid warnings */
     if (container_plugin_context) {} /* To avoid warnings */
     if (type_code) {} /* To avoid warnings */
 
-    return PRESTypePluginDefaultParticipantData_new(participant_info);
+    pd = (struct PRESTypePluginDefaultParticipantData *)
+    PRESTypePluginDefaultParticipantData_new(participant_info);
 
+    programProperty.generateV1Encapsulation = RTI_XCDR_TRUE;
+    programProperty.generateV2Encapsulation = RTI_XCDR_TRUE;
+    programProperty.resolveAlias = RTI_XCDR_TRUE;
+    programProperty.inlineStruct = RTI_XCDR_TRUE;
+    programProperty.optimizeEnum = RTI_XCDR_TRUE;
+
+    programs = DDS_TypeCodeFactory_assert_programs_in_global_list(
+        DDS_TypeCodeFactory_get_instance(),
+        PixyCamConfig_get_typecode(),
+        &programProperty,
+        RTI_XCDR_PROGRAM_MASK_TYPEPLUGIN);
+    if (programs == NULL) {
+        PRESTypePluginDefaultParticipantData_delete(
+            (PRESTypePluginParticipantData) pd);
+        return NULL;
+    }
+
+    pd->programs = programs;
+    return (PRESTypePluginParticipantData)pd;
 }
 
 void 
 PixyCamConfigPlugin_on_participant_detached(
     PRESTypePluginParticipantData participant_data)
-{
+{  		
+    if (participant_data != NULL) {
+        struct PRESTypePluginDefaultParticipantData *pd = 
+        (struct PRESTypePluginDefaultParticipantData *)participant_data;
 
-    PRESTypePluginDefaultParticipantData_delete(participant_data);
+        if (pd->programs != NULL) {
+            DDS_TypeCodeFactory_remove_programs_from_global_list(
+                DDS_TypeCodeFactory_get_instance(),
+                pd->programs);
+            pd->programs = NULL;
+        }
+        PRESTypePluginDefaultParticipantData_delete(participant_data);
+    }
 }
 
 PRESTypePluginEndpointData
@@ -3306,11 +2185,14 @@ PixyCamConfigPlugin_on_endpoint_attached(
     void *containerPluginContext)
 {
     PRESTypePluginEndpointData epd = NULL;
-
-    unsigned int serializedSampleMaxSize;
+    unsigned int serializedSampleMaxSize = 0;
 
     if (top_level_registration) {} /* To avoid warnings */
     if (containerPluginContext) {} /* To avoid warnings */
+
+    if (participant_data == NULL) {
+        return NULL;
+    } 
 
     epd = PRESTypePluginDefaultEndpointData_new(
         participant_data,
@@ -3328,7 +2210,6 @@ PixyCamConfigPlugin_on_endpoint_attached(
     if (endpoint_info->endpointKind == PRES_TYPEPLUGIN_ENDPOINT_WRITER) {
         serializedSampleMaxSize = PixyCamConfigPlugin_get_serialized_sample_max_size(
             epd,RTI_FALSE,RTI_CDR_ENCAPSULATION_ID_CDR_BE,0);
-
         PRESTypePluginDefaultEndpointData_setMaxSizeSerializedSample(epd, serializedSampleMaxSize);
 
         if (PRESTypePluginDefaultEndpointData_createWriterPool(
@@ -3337,7 +2218,7 @@ PixyCamConfigPlugin_on_endpoint_attached(
             (PRESTypePluginGetSerializedSampleMaxSizeFunction)
             PixyCamConfigPlugin_get_serialized_sample_max_size, epd,
             (PRESTypePluginGetSerializedSampleSizeFunction)
-            PixyCamConfigPlugin_get_serialized_sample_size,
+            PRESTypePlugin_interpretedGetSerializedSampleSize,
             epd) == RTI_FALSE) {
             PRESTypePluginDefaultEndpointData_delete(epd);
             return NULL;
@@ -3350,8 +2231,7 @@ PixyCamConfigPlugin_on_endpoint_attached(
 void 
 PixyCamConfigPlugin_on_endpoint_detached(
     PRESTypePluginEndpointData endpoint_data)
-{  
-
+{
     PRESTypePluginDefaultEndpointData_delete(endpoint_data);
 }
 
@@ -3361,7 +2241,6 @@ PixyCamConfigPlugin_return_sample(
     PixyCamConfig *sample,
     void *handle)
 {
-
     PixyCamConfig_finalize_optional_members(sample, RTI_TRUE);
 
     PRESTypePluginDefaultEndpointData_returnSample(
@@ -3388,125 +2267,58 @@ PixyCamConfigPlugin_get_serialized_sample_max_size(
     RTIEncapsulationId encapsulation_id,
     unsigned int current_alignment);
 
-RTIBool 
-PixyCamConfigPlugin_serialize(
-    PRESTypePluginEndpointData endpoint_data,
-    const PixyCamConfig *sample, 
-    struct RTICdrStream *stream,    
-    RTIBool serialize_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    RTIBool serialize_sample, 
-    void *endpoint_plugin_qos)
-{
-    char * position = NULL;
-    RTIBool retval = RTI_TRUE;
-
-    if (endpoint_data) {} /* To avoid warnings */
-    if (endpoint_plugin_qos) {} /* To avoid warnings */
-
-    if(serialize_encapsulation) {
-        if (!RTICdrStream_serializeAndSetCdrEncapsulation(stream , encapsulation_id)) {
-            return RTI_FALSE;
-        }
-
-        position = RTICdrStream_resetAlignment(stream);
-    }
-
-    if(serialize_sample) {
-
-        if (!RTICdrStream_serializePrimitiveArray(
-            stream, (void*) sample->profileEnabled, (7), RTI_CDR_BOOLEAN_TYPE)) {
-            return RTI_FALSE;
-        }
-
-    }
-
-    if(serialize_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
-    return retval;
-}
-
-RTIBool 
-PixyCamConfigPlugin_deserialize_sample(
-    PRESTypePluginEndpointData endpoint_data,
-    PixyCamConfig *sample,
-    struct RTICdrStream *stream,   
-    RTIBool deserialize_encapsulation,
-    RTIBool deserialize_sample, 
-    void *endpoint_plugin_qos)
-{
-
-    char * position = NULL;
-
-    RTIBool done = RTI_FALSE;
-
-    try {
-
-        if (endpoint_data) {} /* To avoid warnings */
-        if (endpoint_plugin_qos) {} /* To avoid warnings */
-        if(deserialize_encapsulation) {
-
-            if (!RTICdrStream_deserializeAndSetCdrEncapsulation(stream)) {
-                return RTI_FALSE;
-            }
-
-            position = RTICdrStream_resetAlignment(stream);
-        }
-        if(deserialize_sample) {
-
-            PixyCamConfig_initialize_ex(sample, RTI_FALSE, RTI_FALSE);
-
-            if (!RTICdrStream_deserializePrimitiveArray(
-                stream, (void*) sample->profileEnabled, (7), RTI_CDR_BOOLEAN_TYPE)) {
-                goto fin; 
-            }
-
-        }
-
-        done = RTI_TRUE;
-      fin:
-        if (done != RTI_TRUE && 
-        RTICdrStream_getRemainder(stream) >=
-        RTI_CDR_PARAMETER_HEADER_ALIGNMENT) {
-            return RTI_FALSE;   
-        }
-        if(deserialize_encapsulation) {
-            RTICdrStream_restoreAlignment(stream,position);
-        }
-
-        return RTI_TRUE;
-
-    } catch (std::bad_alloc&) {
-        return RTI_FALSE;
-    }
-}
-
 RTIBool
-PixyCamConfigPlugin_serialize_to_cdr_buffer(
-    char * buffer,
-    unsigned int * length,
-    const PixyCamConfig *sample)
+PixyCamConfigPlugin_serialize_to_cdr_buffer_ex(
+    char *buffer,
+    unsigned int *length,
+    const PixyCamConfig *sample,
+    DDS_DataRepresentationId_t representation)
 {
+    RTIEncapsulationId encapsulationId = RTI_CDR_ENCAPSULATION_ID_INVALID;
     struct RTICdrStream stream;
     struct PRESTypePluginDefaultEndpointData epd;
     RTIBool result;
+    struct PRESTypePluginDefaultParticipantData pd;
+    struct RTIXCdrTypePluginProgramContext defaultProgramConext =
+    RTIXCdrTypePluginProgramContext_INTIALIZER;
+    struct PRESTypePlugin plugin;
 
     if (length == NULL) {
         return RTI_FALSE;
     }
 
+    RTIOsapiMemory_zero(&epd, sizeof(struct PRESTypePluginDefaultEndpointData));
+    epd.programContext = defaultProgramConext;  
+    epd._participantData = &pd;
+    epd.typePlugin = &plugin;
+    epd.programContext.endpointPluginData = &epd;
+    plugin.typeCode = (struct RTICdrTypeCode *)
+    PixyCamConfig_get_typecode();
+    pd.programs = PixyCamConfigPlugin_get_programs();
+    if (pd.programs == NULL) {
+        return RTI_FALSE;
+    }
+
+    encapsulationId = DDS_TypeCode_get_native_encapsulation(
+        (DDS_TypeCode *) plugin.typeCode,
+        representation);    
+    if (encapsulationId == RTI_CDR_ENCAPSULATION_ID_INVALID) {
+        return RTI_FALSE;
+    }
+
     epd._maxSizeSerializedSample =
     PixyCamConfigPlugin_get_serialized_sample_max_size(
-        NULL, RTI_TRUE, RTICdrEncapsulation_getNativeCdrEncapsulationId(), 0);
+        (PRESTypePluginEndpointData)&epd, 
+        RTI_TRUE, 
+        encapsulationId,
+        0);
 
     if (buffer == NULL) {
         *length = 
-        PixyCamConfigPlugin_get_serialized_sample_size(
+        PRESTypePlugin_interpretedGetSerializedSampleSize(
             (PRESTypePluginEndpointData)&epd,
             RTI_TRUE,
-            RTICdrEncapsulation_getNativeCdrEncapsulationId(),
+            encapsulationId,
             0,
             sample);
 
@@ -3520,13 +2332,30 @@ PixyCamConfigPlugin_serialize_to_cdr_buffer(
     RTICdrStream_init(&stream);
     RTICdrStream_set(&stream, (char *)buffer, *length);
 
-    result = PixyCamConfigPlugin_serialize(
-        (PRESTypePluginEndpointData)&epd, sample, &stream, 
-        RTI_TRUE, RTICdrEncapsulation_getNativeCdrEncapsulationId(), 
-        RTI_TRUE, NULL);  
+    result = PRESTypePlugin_interpretedSerialize(
+        (PRESTypePluginEndpointData)&epd,
+        sample,
+        &stream,
+        RTI_TRUE,
+        encapsulationId,
+        RTI_TRUE,
+        NULL);
 
     *length = RTICdrStream_getCurrentPositionOffset(&stream);
-    return result;     
+    return result;
+}
+
+RTIBool
+PixyCamConfigPlugin_serialize_to_cdr_buffer(
+    char *buffer,
+    unsigned int *length,
+    const PixyCamConfig *sample)
+{
+    return PixyCamConfigPlugin_serialize_to_cdr_buffer_ex(
+        buffer,
+        length,
+        sample,
+        DDS_AUTO_DATA_REPRESENTATION);
 }
 
 RTIBool
@@ -3536,17 +2365,37 @@ PixyCamConfigPlugin_deserialize_from_cdr_buffer(
     unsigned int length)
 {
     struct RTICdrStream stream;
+    struct PRESTypePluginDefaultEndpointData epd;
+    struct RTIXCdrTypePluginProgramContext defaultProgramConext =
+    RTIXCdrTypePluginProgramContext_INTIALIZER;
+    struct PRESTypePluginDefaultParticipantData pd;
+    struct PRESTypePlugin plugin;
+
+    epd.programContext = defaultProgramConext;  
+    epd._participantData = &pd;
+    epd.typePlugin = &plugin;
+    epd.programContext.endpointPluginData = &epd;
+    plugin.typeCode = (struct RTICdrTypeCode *)
+    PixyCamConfig_get_typecode();
+    pd.programs = PixyCamConfigPlugin_get_programs();
+    if (pd.programs == NULL) {
+        return RTI_FALSE;
+    }
+
+    epd._assignabilityProperty.acceptUnknownEnumValue = RTI_XCDR_TRUE;
+    epd._assignabilityProperty.acceptUnknownUnionDiscriminator = RTI_XCDR_TRUE;
 
     RTICdrStream_init(&stream);
     RTICdrStream_set(&stream, (char *)buffer, length);
 
     PixyCamConfig_finalize_optional_members(sample, RTI_TRUE);
-    return PixyCamConfigPlugin_deserialize_sample( 
-        NULL, sample,
+    return PRESTypePlugin_interpretedDeserialize( 
+        (PRESTypePluginEndpointData)&epd, sample,
         &stream, RTI_TRUE, RTI_TRUE, 
         NULL);
 }
 
+#ifndef NDDS_STANDALONE_TYPE
 DDS_ReturnCode_t
 PixyCamConfigPlugin_data_to_string(
     const PixyCamConfig *sample,
@@ -3571,7 +2420,6 @@ PixyCamConfigPlugin_data_to_string(
     if (property == NULL) {
         return DDS_RETCODE_BAD_PARAMETER;
     }
-
     if (!PixyCamConfigPlugin_serialize_to_cdr_buffer(
         NULL, 
         &length, 
@@ -3591,7 +2439,6 @@ PixyCamConfigPlugin_data_to_string(
         RTIOsapiHeap_freeBuffer(buffer);
         return DDS_RETCODE_ERROR;
     }
-
     data = DDS_DynamicData_new(
         PixyCamConfig_get_typecode(), 
         &DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
@@ -3631,124 +2478,7 @@ PixyCamConfigPlugin_data_to_string(
     DDS_DynamicData_delete(data);
     return DDS_RETCODE_OK;
 }
-
-RTIBool 
-PixyCamConfigPlugin_deserialize(
-    PRESTypePluginEndpointData endpoint_data,
-    PixyCamConfig **sample,
-    RTIBool * drop_sample,
-    struct RTICdrStream *stream,   
-    RTIBool deserialize_encapsulation,
-    RTIBool deserialize_sample, 
-    void *endpoint_plugin_qos)
-{
-
-    RTIBool result;
-    const char *METHOD_NAME = "PixyCamConfigPlugin_deserialize";
-    if (drop_sample) {} /* To avoid warnings */
-
-    stream->_xTypesState.unassignable = RTI_FALSE;
-    result= PixyCamConfigPlugin_deserialize_sample( 
-        endpoint_data, (sample != NULL)?*sample:NULL,
-        stream, deserialize_encapsulation, deserialize_sample, 
-        endpoint_plugin_qos);
-    if (result) {
-        if (stream->_xTypesState.unassignable) {
-            result = RTI_FALSE;
-        }
-    }
-    if (!result && stream->_xTypesState.unassignable ) {
-
-        RTICdrLog_exception(
-            METHOD_NAME, 
-            &RTI_CDR_LOG_UNASSIGNABLE_SAMPLE_OF_TYPE_s, 
-            "PixyCamConfig");
-
-    }
-
-    return result;
-
-}
-
-RTIBool PixyCamConfigPlugin_skip(
-    PRESTypePluginEndpointData endpoint_data,
-    struct RTICdrStream *stream,   
-    RTIBool skip_encapsulation,
-    RTIBool skip_sample, 
-    void *endpoint_plugin_qos)
-{
-    char * position = NULL;
-
-    RTIBool done = RTI_FALSE;
-
-    if (endpoint_data) {} /* To avoid warnings */
-    if (endpoint_plugin_qos) {} /* To avoid warnings */
-
-    if(skip_encapsulation) {
-        if (!RTICdrStream_skipEncapsulation(stream)) {
-            return RTI_FALSE;
-        }
-
-        position = RTICdrStream_resetAlignment(stream);
-    }
-
-    if (skip_sample) {
-
-        if (!RTICdrStream_skipPrimitiveArray(
-            stream, (7), RTI_CDR_BOOLEAN_TYPE)) {
-            goto fin; 
-        }      
-    }
-
-    done = RTI_TRUE;
-  fin:
-    if (done != RTI_TRUE && 
-    RTICdrStream_getRemainder(stream) >=
-    RTI_CDR_PARAMETER_HEADER_ALIGNMENT) {
-        return RTI_FALSE;   
-    }
-    if(skip_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
-    return RTI_TRUE;
-}
-
-unsigned int 
-PixyCamConfigPlugin_get_serialized_sample_max_size_ex(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool * overflow,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment)
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    unsigned int encapsulation_size = current_alignment;
-
-    if (endpoint_data) {} /* To avoid warnings */ 
-    if (overflow) {} /* To avoid warnings */
-
-    if (include_encapsulation) {
-
-        if (!RTICdrEncapsulation_validEncapsulationId(encapsulation_id)) {
-            return 1;
-        }
-        RTICdrStream_getEncapsulationSize(encapsulation_size);
-        encapsulation_size -= current_alignment;
-        current_alignment = 0;
-        initial_alignment = 0;
-    }
-
-    current_alignment +=RTICdrType_getPrimitiveArrayMaxSizeSerialized(
-        current_alignment, (7),  RTI_CDR_BOOLEAN_TYPE);
-
-    if (include_encapsulation) {
-        current_alignment += encapsulation_size;
-    }
-    return  current_alignment - initial_alignment;
-}
+#endif
 
 unsigned int 
 PixyCamConfigPlugin_get_serialized_sample_max_size(
@@ -3760,7 +2490,7 @@ PixyCamConfigPlugin_get_serialized_sample_max_size(
     unsigned int size;
     RTIBool overflow = RTI_FALSE;
 
-    size = PixyCamConfigPlugin_get_serialized_sample_max_size_ex(
+    size = PRESTypePlugin_interpretedGetSerializedSampleMaxSize(
         endpoint_data,&overflow,include_encapsulation,encapsulation_id,current_alignment);
 
     if (overflow) {
@@ -3768,95 +2498,6 @@ PixyCamConfigPlugin_get_serialized_sample_max_size(
     }
 
     return size;
-}
-
-unsigned int 
-PixyCamConfigPlugin_get_serialized_sample_min_size(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment)
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    unsigned int encapsulation_size = current_alignment;
-
-    if (endpoint_data) {} /* To avoid warnings */ 
-
-    if (include_encapsulation) {
-
-        if (!RTICdrEncapsulation_validEncapsulationId(encapsulation_id)) {
-            return 1;
-        }
-        RTICdrStream_getEncapsulationSize(encapsulation_size);
-        encapsulation_size -= current_alignment;
-        current_alignment = 0;
-        initial_alignment = 0;
-    }
-
-    current_alignment +=RTICdrType_getPrimitiveArrayMaxSizeSerialized(
-        current_alignment, (7), RTI_CDR_BOOLEAN_TYPE);
-
-    if (include_encapsulation) {
-        current_alignment += encapsulation_size;
-    }
-    return  current_alignment - initial_alignment;
-}
-
-/* Returns the size of the sample in its serialized form (in bytes).
-* It can also be an estimation in excess of the real buffer needed 
-* during a call to the serialize() function.
-* The value reported does not have to include the space for the
-* encapsulation flags.
-*/
-unsigned int
-PixyCamConfigPlugin_get_serialized_sample_size(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment,
-    const PixyCamConfig * sample) 
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    unsigned int encapsulation_size = current_alignment;
-    struct PRESTypePluginDefaultEndpointData epd;   
-
-    if (sample==NULL) {
-        return 0;
-    }
-    if (endpoint_data == NULL) {
-        endpoint_data = (PRESTypePluginEndpointData) &epd;
-        PRESTypePluginDefaultEndpointData_setBaseAlignment(
-            endpoint_data,
-            current_alignment);        
-    }
-
-    if (include_encapsulation) {
-
-        if (!RTICdrEncapsulation_validEncapsulationId(encapsulation_id)) {
-            return 1;
-        }
-        RTICdrStream_getEncapsulationSize(encapsulation_size);
-        encapsulation_size -= current_alignment;
-        current_alignment = 0;
-        initial_alignment = 0;
-        PRESTypePluginDefaultEndpointData_setBaseAlignment(
-            endpoint_data,
-            current_alignment);
-    }
-
-    current_alignment += RTICdrType_getPrimitiveArrayMaxSizeSerialized(
-        PRESTypePluginDefaultEndpointData_getAlignment(
-            endpoint_data, current_alignment), 
-            (7), RTI_CDR_BOOLEAN_TYPE);  
-
-    if (include_encapsulation) {
-        current_alignment += encapsulation_size;
-    }
-    return current_alignment - initial_alignment;
 }
 
 /* --------------------------------------------------------------------------------------
@@ -3867,91 +2508,6 @@ PRESTypePluginKeyKind
 PixyCamConfigPlugin_get_key_kind(void)
 {
     return PRES_TYPEPLUGIN_NO_KEY;
-}
-
-RTIBool 
-PixyCamConfigPlugin_serialize_key(
-    PRESTypePluginEndpointData endpoint_data,
-    const PixyCamConfig *sample, 
-    struct RTICdrStream *stream,    
-    RTIBool serialize_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    RTIBool serialize_key,
-    void *endpoint_plugin_qos)
-{
-    char * position = NULL;
-
-    if(serialize_encapsulation) {
-        if (!RTICdrStream_serializeAndSetCdrEncapsulation(stream , encapsulation_id)) {
-            return RTI_FALSE;
-        }
-
-        position = RTICdrStream_resetAlignment(stream);
-    }
-
-    if(serialize_key) {
-
-        if (!PixyCamConfigPlugin_serialize(
-            endpoint_data,
-            sample,
-            stream,
-            RTI_FALSE, encapsulation_id,
-            RTI_TRUE,
-            endpoint_plugin_qos)) {
-            return RTI_FALSE;
-        }
-
-    }
-
-    if(serialize_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
-    return RTI_TRUE;
-}
-
-RTIBool PixyCamConfigPlugin_deserialize_key_sample(
-    PRESTypePluginEndpointData endpoint_data,
-    PixyCamConfig *sample, 
-    struct RTICdrStream *stream,
-    RTIBool deserialize_encapsulation,
-    RTIBool deserialize_key,
-    void *endpoint_plugin_qos)
-{
-    try {
-
-        char * position = NULL;
-
-        if (endpoint_data) {} /* To avoid warnings */
-        if (endpoint_plugin_qos) {} /* To avoid warnings */
-
-        if(deserialize_encapsulation) {
-
-            if (!RTICdrStream_deserializeAndSetCdrEncapsulation(stream)) {
-                return RTI_FALSE;
-            }
-
-            position = RTICdrStream_resetAlignment(stream);
-        }
-        if (deserialize_key) {
-
-            if (!PixyCamConfigPlugin_deserialize_sample(
-                endpoint_data, sample, stream, 
-                RTI_FALSE, RTI_TRUE, 
-                endpoint_plugin_qos)) {
-                return RTI_FALSE;
-            }
-        }
-
-        if(deserialize_encapsulation) {
-            RTICdrStream_restoreAlignment(stream,position);
-        }
-
-        return RTI_TRUE;
-
-    } catch (std::bad_alloc&) {
-        return RTI_FALSE;
-    }
 }
 
 RTIBool PixyCamConfigPlugin_deserialize_key(
@@ -3966,7 +2522,7 @@ RTIBool PixyCamConfigPlugin_deserialize_key(
     RTIBool result;
     if (drop_sample) {} /* To avoid warnings */
     stream->_xTypesState.unassignable = RTI_FALSE;
-    result= PixyCamConfigPlugin_deserialize_key_sample(
+    result= PRESTypePlugin_interpretedDeserializeKey(
         endpoint_data, (sample != NULL)?*sample:NULL, stream,
         deserialize_encapsulation, deserialize_key, endpoint_plugin_qos);
     if (result) {
@@ -3974,45 +2530,8 @@ RTIBool PixyCamConfigPlugin_deserialize_key(
             result = RTI_FALSE;
         }
     }
-
     return result;    
 
-}
-
-unsigned int
-PixyCamConfigPlugin_get_serialized_key_max_size_ex(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool * overflow,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment)
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    unsigned int encapsulation_size = current_alignment;
-
-    if (endpoint_data) {} /* To avoid warnings */
-    if (overflow) {} /* To avoid warnings */
-
-    if (include_encapsulation) {
-
-        if (!RTICdrEncapsulation_validEncapsulationId(encapsulation_id)) {
-            return 1;
-        }
-        RTICdrStream_getEncapsulationSize(encapsulation_size);
-        encapsulation_size -= current_alignment;
-        current_alignment = 0;
-        initial_alignment = 0;
-    }
-
-    current_alignment += PixyCamConfigPlugin_get_serialized_sample_max_size_ex(
-        endpoint_data, overflow,RTI_FALSE, encapsulation_id, current_alignment);
-
-    if (include_encapsulation) {
-        current_alignment += encapsulation_size;
-    }
-    return current_alignment - initial_alignment;
 }
 
 unsigned int
@@ -4024,10 +2543,8 @@ PixyCamConfigPlugin_get_serialized_key_max_size(
 {
     unsigned int size;
     RTIBool overflow = RTI_FALSE;
-
-    size = PixyCamConfigPlugin_get_serialized_key_max_size_ex(
+    size = PRESTypePlugin_interpretedGetSerializedKeyMaxSize(
         endpoint_data,&overflow,include_encapsulation,encapsulation_id,current_alignment);
-
     if (overflow) {
         size = RTI_CDR_MAX_SERIALIZED_SIZE;
     }
@@ -4035,58 +2552,31 @@ PixyCamConfigPlugin_get_serialized_key_max_size(
     return size;
 }
 
-RTIBool 
-PixyCamConfigPlugin_serialized_sample_to_key(
+unsigned int
+PixyCamConfigPlugin_get_serialized_key_max_size_for_keyhash(
     PRESTypePluginEndpointData endpoint_data,
-    PixyCamConfig *sample,
-    struct RTICdrStream *stream, 
-    RTIBool deserialize_encapsulation,  
-    RTIBool deserialize_key, 
-    void *endpoint_plugin_qos)
+    RTIEncapsulationId encapsulation_id,
+    unsigned int current_alignment)
 {
-    char * position = NULL;
-
-    RTIBool done = RTI_FALSE;
-    RTIBool error = RTI_FALSE;
-
-    if (stream == NULL) {
-        error = RTI_TRUE;
-        goto fin;
-    }
-    if(deserialize_encapsulation) {
-        if (!RTICdrStream_deserializeAndSetCdrEncapsulation(stream)) {
-            return RTI_FALSE;
-        }
-        position = RTICdrStream_resetAlignment(stream);
+    unsigned int size;
+    RTIBool overflow = RTI_FALSE;
+    size = PRESTypePlugin_interpretedGetSerializedKeyMaxSizeForKeyhash(
+        endpoint_data,
+        &overflow,
+        encapsulation_id,
+        current_alignment);
+    if (overflow) {
+        size = RTI_CDR_MAX_SERIALIZED_SIZE;
     }
 
-    if (deserialize_key) {
+    return size;
+}
 
-        if (!PixyCamConfigPlugin_deserialize_sample(
-            endpoint_data, sample, stream, RTI_FALSE, 
-            RTI_TRUE, endpoint_plugin_qos)) {
-            return RTI_FALSE;
-        }
-
-    }
-
-    done = RTI_TRUE;
-  fin:
-    if(!error) {
-        if (done != RTI_TRUE && 
-        RTICdrStream_getRemainder(stream) >=
-        RTI_CDR_PARAMETER_HEADER_ALIGNMENT) {
-            return RTI_FALSE;   
-        }
-    } else {
-        return RTI_FALSE;
-    }       
-
-    if(deserialize_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
-    return RTI_TRUE;
+struct RTIXCdrInterpreterPrograms *PixyCamConfigPlugin_get_programs()
+{
+    return ::rti::xcdr::get_cdr_serialization_programs<
+    PixyCamConfig, 
+    true, true, true>();
 }
 
 /* ------------------------------------------------------------------------
@@ -4130,27 +2620,27 @@ struct PRESTypePlugin *PixyCamConfigPlugin_new(void)
     plugin->destroySampleFnc =
     (PRESTypePluginDestroySampleFunction)
     PixyCamConfigPlugin_destroy_sample;
+    plugin->finalizeOptionalMembersFnc =
+    (PRESTypePluginFinalizeOptionalMembersFunction)
+    PixyCamConfig_finalize_optional_members;
 
-    plugin->serializeFnc =
-    (PRESTypePluginSerializeFunction)
-    PixyCamConfigPlugin_serialize;
+    plugin->serializeFnc = 
+    (PRESTypePluginSerializeFunction) PRESTypePlugin_interpretedSerialize;
     plugin->deserializeFnc =
-    (PRESTypePluginDeserializeFunction)
-    PixyCamConfigPlugin_deserialize;
+    (PRESTypePluginDeserializeFunction) PRESTypePlugin_interpretedDeserializeWithAlloc;
     plugin->getSerializedSampleMaxSizeFnc =
     (PRESTypePluginGetSerializedSampleMaxSizeFunction)
     PixyCamConfigPlugin_get_serialized_sample_max_size;
     plugin->getSerializedSampleMinSizeFnc =
     (PRESTypePluginGetSerializedSampleMinSizeFunction)
-    PixyCamConfigPlugin_get_serialized_sample_min_size;
-
+    PRESTypePlugin_interpretedGetSerializedSampleMinSize;
+    plugin->getDeserializedSampleMaxSizeFnc = NULL; 
     plugin->getSampleFnc =
     (PRESTypePluginGetSampleFunction)
     PixyCamConfigPlugin_get_sample;
     plugin->returnSampleFnc =
     (PRESTypePluginReturnSampleFunction)
     PixyCamConfigPlugin_return_sample;
-
     plugin->getKeyKindFnc =
     (PRESTypePluginGetKeyKindFunction)
     PixyCamConfigPlugin_get_key_kind;
@@ -4168,8 +2658,11 @@ struct PRESTypePlugin *PixyCamConfigPlugin_new(void)
     plugin->instanceToKeyHashFnc = NULL;
     plugin->serializedSampleToKeyHashFnc = NULL;
     plugin->serializedKeyToKeyHashFnc = NULL;    
+    #ifdef NDDS_STANDALONE_TYPE
+    plugin->typeCode = NULL; 
+    #else
     plugin->typeCode =  (struct RTICdrTypeCode *)PixyCamConfig_get_typecode();
-
+    #endif
     plugin->languageKind = PRES_TYPEPLUGIN_CPP_LANG;
 
     /* Serialized buffer */
@@ -4179,12 +2672,20 @@ struct PRESTypePlugin *PixyCamConfigPlugin_new(void)
     plugin->returnBuffer = 
     (PRESTypePluginReturnBufferFunction)
     PixyCamConfigPlugin_return_buffer;
+    plugin->getBufferWithParams = NULL;
+    plugin->returnBufferWithParams = NULL;  
     plugin->getSerializedSampleSizeFnc =
     (PRESTypePluginGetSerializedSampleSizeFunction)
-    PixyCamConfigPlugin_get_serialized_sample_size;
+    PRESTypePlugin_interpretedGetSerializedSampleSize;
+
+    plugin->getWriterLoanedSampleFnc = NULL; 
+    plugin->returnWriterLoanedSampleFnc = NULL;
+    plugin->returnWriterLoanedSampleFromCookieFnc = NULL;
+    plugin->validateWriterLoanedSampleFnc = NULL;
+    plugin->setWriterLoanedSampleSerializedStateFnc = NULL;
 
     plugin->endpointTypeName = PixyCamConfigTYPENAME;
-
+    plugin->isMetpType = RTI_FALSE;
     return plugin;
 }
 

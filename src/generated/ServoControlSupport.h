@@ -18,7 +18,7 @@ or consult the RTI Connext manual.
 #include "ndds/ndds_cpp.h"
 #endif
 
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 
 class __declspec(dllimport) DDSTypeSupport;
 class __declspec(dllimport) DDSDataWriter;
@@ -36,7 +36,7 @@ Organized using the well-documented "Generics Pattern" for
 implementing generics in C and C++.
 */
 
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, start exporting symbols.
 */
 #undef NDDSUSERDllExport
@@ -48,10 +48,14 @@ DDS_TYPESUPPORT_CPP(
     ServoControlTypeSupport, 
     ServoControl);
 
-DDS_DATAWRITER_CPP(ServoControlDataWriter, ServoControl);
-DDS_DATAREADER_CPP(ServoControlDataReader, ServoControlSeq, ServoControl);
+#define ENABLE_TDATAWRITER_DATA_CONSTRUCTOR_METHODS
+DDS_DATAWRITER_WITH_DATA_CONSTRUCTOR_METHODS_CPP(ServoControlDataWriter, ServoControl);
+#undef ENABLE_TDATAWRITER_DATA_CONSTRUCTOR_METHODS
+#define ENABLE_TDATAREADER_DATA_CONSISTENCY_CHECK_METHOD
+DDS_DATAREADER_W_DATA_CONSISTENCY_CHECK(ServoControlDataReader, ServoControlSeq, ServoControl);
+#undef ENABLE_TDATAREADER_DATA_CONSISTENCY_CHECK_METHOD
 
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, stop exporting symbols.
 */
 #undef NDDSUSERDllExport

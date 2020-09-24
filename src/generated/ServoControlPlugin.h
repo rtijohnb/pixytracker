@@ -20,7 +20,7 @@ struct RTICdrStream;
 #include "pres/pres_typePlugin.h"
 #endif
 
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, start exporting symbols.
 */
 #undef NDDSUSERDllExport
@@ -30,8 +30,9 @@ struct RTICdrStream;
 extern "C" {
 
     #define ServoControlPlugin_get_sample PRESTypePluginDefaultEndpointData_getSample 
+
     #define ServoControlPlugin_get_buffer PRESTypePluginDefaultEndpointData_getBuffer 
-    #define ServoControlPlugin_return_buffer PRESTypePluginDefaultEndpointData_returnBuffer 
+    #define ServoControlPlugin_return_buffer PRESTypePluginDefaultEndpointData_returnBuffer
 
     #define ServoControlPlugin_create_sample PRESTypePluginDefaultEndpointData_createSample 
     #define ServoControlPlugin_destroy_sample PRESTypePluginDefaultEndpointData_deleteSample 
@@ -117,30 +118,18 @@ extern "C" {
     (De)Serialize functions:
     * ------------------------------------------------------------------------- */
 
-    NDDSUSERDllExport extern RTIBool 
-    ServoControlPlugin_serialize(
-        PRESTypePluginEndpointData endpoint_data,
-        const ServoControl *sample,
-        struct RTICdrStream *stream, 
-        RTIBool serialize_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        RTIBool serialize_sample, 
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern RTIBool 
-    ServoControlPlugin_deserialize_sample(
-        PRESTypePluginEndpointData endpoint_data,
-        ServoControl *sample, 
-        struct RTICdrStream *stream,
-        RTIBool deserialize_encapsulation,
-        RTIBool deserialize_sample, 
-        void *endpoint_plugin_qos);
-
     NDDSUSERDllExport extern RTIBool
     ServoControlPlugin_serialize_to_cdr_buffer(
         char * buffer,
         unsigned int * length,
         const ServoControl *sample); 
+
+    NDDSUSERDllExport extern RTIBool
+    ServoControlPlugin_serialize_to_cdr_buffer_ex(
+        char *buffer,
+        unsigned int *length,
+        const ServoControl *sample,
+        DDS_DataRepresentationId_t representation);
 
     NDDSUSERDllExport extern RTIBool 
     ServoControlPlugin_deserialize(
@@ -157,28 +146,14 @@ extern "C" {
         ServoControl *sample,
         const char * buffer,
         unsigned int length);    
+    #ifndef NDDS_STANDALONE_TYPE
     NDDSUSERDllExport extern DDS_ReturnCode_t
     ServoControlPlugin_data_to_string(
         const ServoControl *sample,
         char *str,
         DDS_UnsignedLong *str_size, 
         const struct DDS_PrintFormatProperty *property);    
-
-    NDDSUSERDllExport extern RTIBool
-    ServoControlPlugin_skip(
-        PRESTypePluginEndpointData endpoint_data,
-        struct RTICdrStream *stream, 
-        RTIBool skip_encapsulation,  
-        RTIBool skip_sample, 
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern unsigned int 
-    ServoControlPlugin_get_serialized_sample_max_size_ex(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool * overflow,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment);    
+    #endif
 
     NDDSUSERDllExport extern unsigned int 
     ServoControlPlugin_get_serialized_sample_max_size(
@@ -187,34 +162,11 @@ extern "C" {
         RTIEncapsulationId encapsulation_id,
         unsigned int current_alignment);
 
-    NDDSUSERDllExport extern unsigned int 
-    ServoControlPlugin_get_serialized_sample_min_size(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment);
-
-    NDDSUSERDllExport extern unsigned int
-    ServoControlPlugin_get_serialized_sample_size(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment,
-        const ServoControl * sample);
-
     /* --------------------------------------------------------------------------------------
     Key Management functions:
     * -------------------------------------------------------------------------------------- */
     NDDSUSERDllExport extern PRESTypePluginKeyKind 
     ServoControlPlugin_get_key_kind(void);
-
-    NDDSUSERDllExport extern unsigned int 
-    ServoControlPlugin_get_serialized_key_max_size_ex(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool * overflow,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment);
 
     NDDSUSERDllExport extern unsigned int 
     ServoControlPlugin_get_serialized_key_max_size(
@@ -223,24 +175,11 @@ extern "C" {
         RTIEncapsulationId encapsulation_id,
         unsigned int current_alignment);
 
-    NDDSUSERDllExport extern RTIBool 
-    ServoControlPlugin_serialize_key(
+    NDDSUSERDllExport extern unsigned int 
+    ServoControlPlugin_get_serialized_key_max_size_for_keyhash(
         PRESTypePluginEndpointData endpoint_data,
-        const ServoControl *sample,
-        struct RTICdrStream *stream,
-        RTIBool serialize_encapsulation,
         RTIEncapsulationId encapsulation_id,
-        RTIBool serialize_key,
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern RTIBool 
-    ServoControlPlugin_deserialize_key_sample(
-        PRESTypePluginEndpointData endpoint_data,
-        ServoControl * sample,
-        struct RTICdrStream *stream,
-        RTIBool deserialize_encapsulation,
-        RTIBool deserialize_key,
-        void *endpoint_plugin_qos);
+        unsigned int current_alignment);
 
     NDDSUSERDllExport extern RTIBool 
     ServoControlPlugin_deserialize_key(
@@ -252,14 +191,8 @@ extern "C" {
         RTIBool deserialize_key,
         void *endpoint_plugin_qos);
 
-    NDDSUSERDllExport extern RTIBool
-    ServoControlPlugin_serialized_sample_to_key(
-        PRESTypePluginEndpointData endpoint_data,
-        ServoControl *sample,
-        struct RTICdrStream *stream, 
-        RTIBool deserialize_encapsulation,  
-        RTIBool deserialize_key, 
-        void *endpoint_plugin_qos);
+    NDDSUSERDllExport extern
+    struct RTIXCdrInterpreterPrograms *ServoControlPlugin_get_programs();
 
     /* Plugin Functions */
     NDDSUSERDllExport extern struct PRESTypePlugin*
@@ -270,7 +203,7 @@ extern "C" {
 
 }
 
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, stop exporting symbols.
 */
 #undef NDDSUSERDllExport

@@ -46,7 +46,9 @@ Defines:   TDataWriter, TData
 #define TDataWriter ShapeTypeDataWriter
 #define TData       ShapeType
 
+#define ENABLE_TDATAWRITER_DATA_CONSTRUCTOR_METHODS
 #include "dds_cpp/generic/dds_cpp_data_TDataWriter.gen"
+#undef ENABLE_TDATAWRITER_DATA_CONSTRUCTOR_METHODS
 
 #undef TDataWriter
 #undef TData
@@ -71,7 +73,9 @@ Defines:   TDataReader, TDataSeq, TData
 #define TDataSeq    ShapeTypeSeq
 #define TData       ShapeType
 
+#define ENABLE_TDATAREADER_DATA_CONSISTENCY_CHECK_METHOD
 #include "dds_cpp/generic/dds_cpp_data_TDataReader.gen"
+#undef ENABLE_TDATAREADER_DATA_CONSISTENCY_CHECK_METHOD
 
 #undef TDataReader
 #undef TDataSeq
@@ -101,7 +105,9 @@ Defines:   TTypeSupport, TData, TDataReader, TDataWriter
 #define TDataReader  ShapeTypeDataReader
 #define TDataWriter  ShapeTypeDataWriter
 #define TGENERATE_SER_CODE
+#ifndef NDDS_STANDALONE_TYPE
 #define TGENERATE_TYPECODE
+#endif
 
 #include "dds_cpp/generic/dds_cpp_data_TTypeSupport.gen"
 
@@ -109,7 +115,9 @@ Defines:   TTypeSupport, TData, TDataReader, TDataWriter
 #undef TData
 #undef TDataReader
 #undef TDataWriter
+#ifndef NDDS_STANDALONE_TYPE
 #undef TGENERATE_TYPECODE
+#endif
 #undef TGENERATE_SER_CODE
 #undef TTYPENAME
 #undef TPlugin_new
@@ -146,7 +154,9 @@ Defines:   TDataWriter, TData
 #define TDataWriter ShapeTypeExtendedDataWriter
 #define TData       ShapeTypeExtended
 
+#define ENABLE_TDATAWRITER_DATA_CONSTRUCTOR_METHODS
 #include "dds_cpp/generic/dds_cpp_data_TDataWriter.gen"
+#undef ENABLE_TDATAWRITER_DATA_CONSTRUCTOR_METHODS
 
 #undef TDataWriter
 #undef TData
@@ -171,7 +181,9 @@ Defines:   TDataReader, TDataSeq, TData
 #define TDataSeq    ShapeTypeExtendedSeq
 #define TData       ShapeTypeExtended
 
+#define ENABLE_TDATAREADER_DATA_CONSISTENCY_CHECK_METHOD
 #include "dds_cpp/generic/dds_cpp_data_TDataReader.gen"
+#undef ENABLE_TDATAREADER_DATA_CONSISTENCY_CHECK_METHOD
 
 #undef TDataReader
 #undef TDataSeq
@@ -201,7 +213,9 @@ Defines:   TTypeSupport, TData, TDataReader, TDataWriter
 #define TDataReader  ShapeTypeExtendedDataReader
 #define TDataWriter  ShapeTypeExtendedDataWriter
 #define TGENERATE_SER_CODE
+#ifndef NDDS_STANDALONE_TYPE
 #define TGENERATE_TYPECODE
+#endif
 
 #include "dds_cpp/generic/dds_cpp_data_TTypeSupport.gen"
 
@@ -209,7 +223,9 @@ Defines:   TTypeSupport, TData, TDataReader, TDataWriter
 #undef TData
 #undef TDataReader
 #undef TDataWriter
+#ifndef NDDS_STANDALONE_TYPE
 #undef TGENERATE_TYPECODE
+#endif
 #undef TGENERATE_SER_CODE
 #undef TTYPENAME
 #undef TPlugin_new
@@ -246,7 +262,9 @@ Defines:   TDataWriter, TData
 #define TDataWriter PixyCamConfigDataWriter
 #define TData       PixyCamConfig
 
+#define ENABLE_TDATAWRITER_DATA_CONSTRUCTOR_METHODS
 #include "dds_cpp/generic/dds_cpp_data_TDataWriter.gen"
+#undef ENABLE_TDATAWRITER_DATA_CONSTRUCTOR_METHODS
 
 #undef TDataWriter
 #undef TData
@@ -271,7 +289,9 @@ Defines:   TDataReader, TDataSeq, TData
 #define TDataSeq    PixyCamConfigSeq
 #define TData       PixyCamConfig
 
+#define ENABLE_TDATAREADER_DATA_CONSISTENCY_CHECK_METHOD
 #include "dds_cpp/generic/dds_cpp_data_TDataReader.gen"
+#undef ENABLE_TDATAREADER_DATA_CONSISTENCY_CHECK_METHOD
 
 #undef TDataReader
 #undef TDataSeq
@@ -301,7 +321,9 @@ Defines:   TTypeSupport, TData, TDataReader, TDataWriter
 #define TDataReader  PixyCamConfigDataReader
 #define TDataWriter  PixyCamConfigDataWriter
 #define TGENERATE_SER_CODE
+#ifndef NDDS_STANDALONE_TYPE
 #define TGENERATE_TYPECODE
+#endif
 
 #include "dds_cpp/generic/dds_cpp_data_TTypeSupport.gen"
 
@@ -309,7 +331,9 @@ Defines:   TTypeSupport, TData, TDataReader, TDataWriter
 #undef TData
 #undef TDataReader
 #undef TDataWriter
+#ifndef NDDS_STANDALONE_TYPE
 #undef TGENERATE_TYPECODE
+#endif
 #undef TGENERATE_SER_CODE
 #undef TTYPENAME
 #undef TPlugin_new

@@ -18,7 +18,7 @@ or consult the RTI Connext manual.
 #include "ndds/ndds_cpp.h"
 #endif
 
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 
 class __declspec(dllimport) DDSTypeSupport;
 class __declspec(dllimport) DDSDataWriter;
@@ -36,7 +36,7 @@ Organized using the well-documented "Generics Pattern" for
 implementing generics in C and C++.
 */
 
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, start exporting symbols.
 */
 #undef NDDSUSERDllExport
@@ -48,10 +48,14 @@ DDS_TYPESUPPORT_CPP(
     ShapeTypeTypeSupport, 
     ShapeType);
 
-DDS_DATAWRITER_CPP(ShapeTypeDataWriter, ShapeType);
-DDS_DATAREADER_CPP(ShapeTypeDataReader, ShapeTypeSeq, ShapeType);
+#define ENABLE_TDATAWRITER_DATA_CONSTRUCTOR_METHODS
+DDS_DATAWRITER_WITH_DATA_CONSTRUCTOR_METHODS_CPP(ShapeTypeDataWriter, ShapeType);
+#undef ENABLE_TDATAWRITER_DATA_CONSTRUCTOR_METHODS
+#define ENABLE_TDATAREADER_DATA_CONSISTENCY_CHECK_METHOD
+DDS_DATAREADER_W_DATA_CONSISTENCY_CHECK(ShapeTypeDataReader, ShapeTypeSeq, ShapeType);
+#undef ENABLE_TDATAREADER_DATA_CONSISTENCY_CHECK_METHOD
 
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, stop exporting symbols.
 */
 #undef NDDSUSERDllExport
@@ -67,7 +71,7 @@ Organized using the well-documented "Generics Pattern" for
 implementing generics in C and C++.
 */
 
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, start exporting symbols.
 */
 #undef NDDSUSERDllExport
@@ -79,10 +83,14 @@ DDS_TYPESUPPORT_CPP(
     ShapeTypeExtendedTypeSupport, 
     ShapeTypeExtended);
 
-DDS_DATAWRITER_CPP(ShapeTypeExtendedDataWriter, ShapeTypeExtended);
-DDS_DATAREADER_CPP(ShapeTypeExtendedDataReader, ShapeTypeExtendedSeq, ShapeTypeExtended);
+#define ENABLE_TDATAWRITER_DATA_CONSTRUCTOR_METHODS
+DDS_DATAWRITER_WITH_DATA_CONSTRUCTOR_METHODS_CPP(ShapeTypeExtendedDataWriter, ShapeTypeExtended);
+#undef ENABLE_TDATAWRITER_DATA_CONSTRUCTOR_METHODS
+#define ENABLE_TDATAREADER_DATA_CONSISTENCY_CHECK_METHOD
+DDS_DATAREADER_W_DATA_CONSISTENCY_CHECK(ShapeTypeExtendedDataReader, ShapeTypeExtendedSeq, ShapeTypeExtended);
+#undef ENABLE_TDATAREADER_DATA_CONSISTENCY_CHECK_METHOD
 
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, stop exporting symbols.
 */
 #undef NDDSUSERDllExport
@@ -98,7 +106,7 @@ Organized using the well-documented "Generics Pattern" for
 implementing generics in C and C++.
 */
 
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, start exporting symbols.
 */
 #undef NDDSUSERDllExport
@@ -110,10 +118,14 @@ DDS_TYPESUPPORT_CPP(
     PixyCamConfigTypeSupport, 
     PixyCamConfig);
 
-DDS_DATAWRITER_CPP(PixyCamConfigDataWriter, PixyCamConfig);
-DDS_DATAREADER_CPP(PixyCamConfigDataReader, PixyCamConfigSeq, PixyCamConfig);
+#define ENABLE_TDATAWRITER_DATA_CONSTRUCTOR_METHODS
+DDS_DATAWRITER_WITH_DATA_CONSTRUCTOR_METHODS_CPP(PixyCamConfigDataWriter, PixyCamConfig);
+#undef ENABLE_TDATAWRITER_DATA_CONSTRUCTOR_METHODS
+#define ENABLE_TDATAREADER_DATA_CONSISTENCY_CHECK_METHOD
+DDS_DATAREADER_W_DATA_CONSISTENCY_CHECK(PixyCamConfigDataReader, PixyCamConfigSeq, PixyCamConfig);
+#undef ENABLE_TDATAREADER_DATA_CONSISTENCY_CHECK_METHOD
 
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, stop exporting symbols.
 */
 #undef NDDSUSERDllExport

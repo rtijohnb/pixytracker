@@ -41,6 +41,9 @@ or consult the RTI Connext manual.
 #include "cdr/cdr_stream.h"
 #endif
 
+#include "xcdr/xcdr_interpreter.h"
+#include "xcdr/xcdr_stream.h"
+
 #ifndef cdr_log_h
 #include "cdr/cdr_log.h"
 #endif
@@ -48,6 +51,8 @@ or consult the RTI Connext manual.
 #ifndef pres_typePlugin_h
 #include "pres/pres_typePlugin.h"
 #endif
+
+#include "dds_c/dds_c_typecode_impl.h"
 
 #define RTI_CDR_CURRENT_SUBMODULE RTI_CDR_SUBMODULE_MASK_STREAM
 
@@ -78,7 +83,7 @@ ServoControlPluginSupport_create_data_w_params(
         delete  sample;
         sample=NULL;
     }
-    return sample; 
+    return sample;
 } 
 
 ServoControl *
@@ -97,7 +102,7 @@ ServoControlPluginSupport_create_data_ex(RTIBool allocate_pointers)
         sample=NULL;
     }
 
-    return sample; 
+    return sample;
 }
 
 ServoControl *
@@ -110,7 +115,6 @@ void
 ServoControlPluginSupport_destroy_data_w_params(
     ServoControl *sample,
     const struct DDS_TypeDeallocationParams_t * dealloc_params) {
-
     ServoControl_finalize_w_params(sample,dealloc_params);
 
     delete  sample;
@@ -120,7 +124,6 @@ ServoControlPluginSupport_destroy_data_w_params(
 void 
 ServoControlPluginSupport_destroy_data_ex(
     ServoControl *sample,RTIBool deallocate_pointers) {
-
     ServoControl_finalize_ex(sample,deallocate_pointers);
 
     delete  sample;
@@ -186,22 +189,57 @@ ServoControlPlugin_on_participant_attached(
     void *container_plugin_context,
     RTICdrTypeCode *type_code)
 {
+    struct RTIXCdrInterpreterPrograms *programs = NULL;
+    struct PRESTypePluginDefaultParticipantData *pd = NULL;
+    struct RTIXCdrInterpreterProgramsGenProperty programProperty =
+    RTIXCdrInterpreterProgramsGenProperty_INITIALIZER;
+
     if (registration_data) {} /* To avoid warnings */
     if (participant_info) {} /* To avoid warnings */
     if (top_level_registration) {} /* To avoid warnings */
     if (container_plugin_context) {} /* To avoid warnings */
     if (type_code) {} /* To avoid warnings */
 
-    return PRESTypePluginDefaultParticipantData_new(participant_info);
+    pd = (struct PRESTypePluginDefaultParticipantData *)
+    PRESTypePluginDefaultParticipantData_new(participant_info);
 
+    programProperty.generateV1Encapsulation = RTI_XCDR_TRUE;
+    programProperty.generateV2Encapsulation = RTI_XCDR_TRUE;
+    programProperty.resolveAlias = RTI_XCDR_TRUE;
+    programProperty.inlineStruct = RTI_XCDR_TRUE;
+    programProperty.optimizeEnum = RTI_XCDR_TRUE;
+
+    programs = DDS_TypeCodeFactory_assert_programs_in_global_list(
+        DDS_TypeCodeFactory_get_instance(),
+        ServoControl_get_typecode(),
+        &programProperty,
+        RTI_XCDR_PROGRAM_MASK_TYPEPLUGIN);
+    if (programs == NULL) {
+        PRESTypePluginDefaultParticipantData_delete(
+            (PRESTypePluginParticipantData) pd);
+        return NULL;
+    }
+
+    pd->programs = programs;
+    return (PRESTypePluginParticipantData)pd;
 }
 
 void 
 ServoControlPlugin_on_participant_detached(
     PRESTypePluginParticipantData participant_data)
-{
+{  		
+    if (participant_data != NULL) {
+        struct PRESTypePluginDefaultParticipantData *pd = 
+        (struct PRESTypePluginDefaultParticipantData *)participant_data;
 
-    PRESTypePluginDefaultParticipantData_delete(participant_data);
+        if (pd->programs != NULL) {
+            DDS_TypeCodeFactory_remove_programs_from_global_list(
+                DDS_TypeCodeFactory_get_instance(),
+                pd->programs);
+            pd->programs = NULL;
+        }
+        PRESTypePluginDefaultParticipantData_delete(participant_data);
+    }
 }
 
 PRESTypePluginEndpointData
@@ -212,11 +250,14 @@ ServoControlPlugin_on_endpoint_attached(
     void *containerPluginContext)
 {
     PRESTypePluginEndpointData epd = NULL;
-
-    unsigned int serializedSampleMaxSize;
+    unsigned int serializedSampleMaxSize = 0;
 
     if (top_level_registration) {} /* To avoid warnings */
     if (containerPluginContext) {} /* To avoid warnings */
+
+    if (participant_data == NULL) {
+        return NULL;
+    } 
 
     epd = PRESTypePluginDefaultEndpointData_new(
         participant_data,
@@ -234,7 +275,6 @@ ServoControlPlugin_on_endpoint_attached(
     if (endpoint_info->endpointKind == PRES_TYPEPLUGIN_ENDPOINT_WRITER) {
         serializedSampleMaxSize = ServoControlPlugin_get_serialized_sample_max_size(
             epd,RTI_FALSE,RTI_CDR_ENCAPSULATION_ID_CDR_BE,0);
-
         PRESTypePluginDefaultEndpointData_setMaxSizeSerializedSample(epd, serializedSampleMaxSize);
 
         if (PRESTypePluginDefaultEndpointData_createWriterPool(
@@ -243,7 +283,7 @@ ServoControlPlugin_on_endpoint_attached(
             (PRESTypePluginGetSerializedSampleMaxSizeFunction)
             ServoControlPlugin_get_serialized_sample_max_size, epd,
             (PRESTypePluginGetSerializedSampleSizeFunction)
-            ServoControlPlugin_get_serialized_sample_size,
+            PRESTypePlugin_interpretedGetSerializedSampleSize,
             epd) == RTI_FALSE) {
             PRESTypePluginDefaultEndpointData_delete(epd);
             return NULL;
@@ -256,8 +296,7 @@ ServoControlPlugin_on_endpoint_attached(
 void 
 ServoControlPlugin_on_endpoint_detached(
     PRESTypePluginEndpointData endpoint_data)
-{  
-
+{
     PRESTypePluginDefaultEndpointData_delete(endpoint_data);
 }
 
@@ -267,7 +306,6 @@ ServoControlPlugin_return_sample(
     ServoControl *sample,
     void *handle)
 {
-
     ServoControl_finalize_optional_members(sample, RTI_TRUE);
 
     PRESTypePluginDefaultEndpointData_returnSample(
@@ -294,142 +332,58 @@ ServoControlPlugin_get_serialized_sample_max_size(
     RTIEncapsulationId encapsulation_id,
     unsigned int current_alignment);
 
-RTIBool 
-ServoControlPlugin_serialize(
-    PRESTypePluginEndpointData endpoint_data,
-    const ServoControl *sample, 
-    struct RTICdrStream *stream,    
-    RTIBool serialize_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    RTIBool serialize_sample, 
-    void *endpoint_plugin_qos)
-{
-    char * position = NULL;
-    RTIBool retval = RTI_TRUE;
-
-    if (endpoint_data) {} /* To avoid warnings */
-    if (endpoint_plugin_qos) {} /* To avoid warnings */
-
-    if(serialize_encapsulation) {
-        if (!RTICdrStream_serializeAndSetCdrEncapsulation(stream , encapsulation_id)) {
-            return RTI_FALSE;
-        }
-
-        position = RTICdrStream_resetAlignment(stream);
-    }
-
-    if(serialize_sample) {
-
-        if (!RTICdrStream_serializeUnsignedShort(
-            stream, &sample->pan)) {
-            return RTI_FALSE;
-        }
-
-        if (!RTICdrStream_serializeUnsignedShort(
-            stream, &sample->tilt)) {
-            return RTI_FALSE;
-        }
-
-        if (!RTICdrStream_serializeUnsignedShort(
-            stream, &sample->frequency)) {
-            return RTI_FALSE;
-        }
-
-    }
-
-    if(serialize_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
-    return retval;
-}
-
-RTIBool 
-ServoControlPlugin_deserialize_sample(
-    PRESTypePluginEndpointData endpoint_data,
-    ServoControl *sample,
-    struct RTICdrStream *stream,   
-    RTIBool deserialize_encapsulation,
-    RTIBool deserialize_sample, 
-    void *endpoint_plugin_qos)
-{
-
-    char * position = NULL;
-
-    RTIBool done = RTI_FALSE;
-
-    try {
-
-        if (endpoint_data) {} /* To avoid warnings */
-        if (endpoint_plugin_qos) {} /* To avoid warnings */
-        if(deserialize_encapsulation) {
-
-            if (!RTICdrStream_deserializeAndSetCdrEncapsulation(stream)) {
-                return RTI_FALSE;
-            }
-
-            position = RTICdrStream_resetAlignment(stream);
-        }
-        if(deserialize_sample) {
-
-            ServoControl_initialize_ex(sample, RTI_FALSE, RTI_FALSE);
-
-            if (!RTICdrStream_deserializeUnsignedShort(
-                stream, &sample->pan)) {
-                goto fin; 
-            }
-            if (!RTICdrStream_deserializeUnsignedShort(
-                stream, &sample->tilt)) {
-                goto fin; 
-            }
-            if (!RTICdrStream_deserializeUnsignedShort(
-                stream, &sample->frequency)) {
-                goto fin; 
-            }
-        }
-
-        done = RTI_TRUE;
-      fin:
-        if (done != RTI_TRUE && 
-        RTICdrStream_getRemainder(stream) >=
-        RTI_CDR_PARAMETER_HEADER_ALIGNMENT) {
-            return RTI_FALSE;   
-        }
-        if(deserialize_encapsulation) {
-            RTICdrStream_restoreAlignment(stream,position);
-        }
-
-        return RTI_TRUE;
-
-    } catch (std::bad_alloc&) {
-        return RTI_FALSE;
-    }
-}
-
 RTIBool
-ServoControlPlugin_serialize_to_cdr_buffer(
-    char * buffer,
-    unsigned int * length,
-    const ServoControl *sample)
+ServoControlPlugin_serialize_to_cdr_buffer_ex(
+    char *buffer,
+    unsigned int *length,
+    const ServoControl *sample,
+    DDS_DataRepresentationId_t representation)
 {
+    RTIEncapsulationId encapsulationId = RTI_CDR_ENCAPSULATION_ID_INVALID;
     struct RTICdrStream stream;
     struct PRESTypePluginDefaultEndpointData epd;
     RTIBool result;
+    struct PRESTypePluginDefaultParticipantData pd;
+    struct RTIXCdrTypePluginProgramContext defaultProgramConext =
+    RTIXCdrTypePluginProgramContext_INTIALIZER;
+    struct PRESTypePlugin plugin;
 
     if (length == NULL) {
         return RTI_FALSE;
     }
 
+    RTIOsapiMemory_zero(&epd, sizeof(struct PRESTypePluginDefaultEndpointData));
+    epd.programContext = defaultProgramConext;  
+    epd._participantData = &pd;
+    epd.typePlugin = &plugin;
+    epd.programContext.endpointPluginData = &epd;
+    plugin.typeCode = (struct RTICdrTypeCode *)
+    ServoControl_get_typecode();
+    pd.programs = ServoControlPlugin_get_programs();
+    if (pd.programs == NULL) {
+        return RTI_FALSE;
+    }
+
+    encapsulationId = DDS_TypeCode_get_native_encapsulation(
+        (DDS_TypeCode *) plugin.typeCode,
+        representation);    
+    if (encapsulationId == RTI_CDR_ENCAPSULATION_ID_INVALID) {
+        return RTI_FALSE;
+    }
+
     epd._maxSizeSerializedSample =
     ServoControlPlugin_get_serialized_sample_max_size(
-        NULL, RTI_TRUE, RTICdrEncapsulation_getNativeCdrEncapsulationId(), 0);
+        (PRESTypePluginEndpointData)&epd, 
+        RTI_TRUE, 
+        encapsulationId,
+        0);
 
     if (buffer == NULL) {
         *length = 
-        ServoControlPlugin_get_serialized_sample_size(
+        PRESTypePlugin_interpretedGetSerializedSampleSize(
             (PRESTypePluginEndpointData)&epd,
             RTI_TRUE,
-            RTICdrEncapsulation_getNativeCdrEncapsulationId(),
+            encapsulationId,
             0,
             sample);
 
@@ -443,13 +397,30 @@ ServoControlPlugin_serialize_to_cdr_buffer(
     RTICdrStream_init(&stream);
     RTICdrStream_set(&stream, (char *)buffer, *length);
 
-    result = ServoControlPlugin_serialize(
-        (PRESTypePluginEndpointData)&epd, sample, &stream, 
-        RTI_TRUE, RTICdrEncapsulation_getNativeCdrEncapsulationId(), 
-        RTI_TRUE, NULL);  
+    result = PRESTypePlugin_interpretedSerialize(
+        (PRESTypePluginEndpointData)&epd,
+        sample,
+        &stream,
+        RTI_TRUE,
+        encapsulationId,
+        RTI_TRUE,
+        NULL);
 
     *length = RTICdrStream_getCurrentPositionOffset(&stream);
-    return result;     
+    return result;
+}
+
+RTIBool
+ServoControlPlugin_serialize_to_cdr_buffer(
+    char *buffer,
+    unsigned int *length,
+    const ServoControl *sample)
+{
+    return ServoControlPlugin_serialize_to_cdr_buffer_ex(
+        buffer,
+        length,
+        sample,
+        DDS_AUTO_DATA_REPRESENTATION);
 }
 
 RTIBool
@@ -459,17 +430,37 @@ ServoControlPlugin_deserialize_from_cdr_buffer(
     unsigned int length)
 {
     struct RTICdrStream stream;
+    struct PRESTypePluginDefaultEndpointData epd;
+    struct RTIXCdrTypePluginProgramContext defaultProgramConext =
+    RTIXCdrTypePluginProgramContext_INTIALIZER;
+    struct PRESTypePluginDefaultParticipantData pd;
+    struct PRESTypePlugin plugin;
+
+    epd.programContext = defaultProgramConext;  
+    epd._participantData = &pd;
+    epd.typePlugin = &plugin;
+    epd.programContext.endpointPluginData = &epd;
+    plugin.typeCode = (struct RTICdrTypeCode *)
+    ServoControl_get_typecode();
+    pd.programs = ServoControlPlugin_get_programs();
+    if (pd.programs == NULL) {
+        return RTI_FALSE;
+    }
+
+    epd._assignabilityProperty.acceptUnknownEnumValue = RTI_XCDR_TRUE;
+    epd._assignabilityProperty.acceptUnknownUnionDiscriminator = RTI_XCDR_TRUE;
 
     RTICdrStream_init(&stream);
     RTICdrStream_set(&stream, (char *)buffer, length);
 
     ServoControl_finalize_optional_members(sample, RTI_TRUE);
-    return ServoControlPlugin_deserialize_sample( 
-        NULL, sample,
+    return PRESTypePlugin_interpretedDeserialize( 
+        (PRESTypePluginEndpointData)&epd, sample,
         &stream, RTI_TRUE, RTI_TRUE, 
         NULL);
 }
 
+#ifndef NDDS_STANDALONE_TYPE
 DDS_ReturnCode_t
 ServoControlPlugin_data_to_string(
     const ServoControl *sample,
@@ -494,7 +485,6 @@ ServoControlPlugin_data_to_string(
     if (property == NULL) {
         return DDS_RETCODE_BAD_PARAMETER;
     }
-
     if (!ServoControlPlugin_serialize_to_cdr_buffer(
         NULL, 
         &length, 
@@ -514,7 +504,6 @@ ServoControlPlugin_data_to_string(
         RTIOsapiHeap_freeBuffer(buffer);
         return DDS_RETCODE_ERROR;
     }
-
     data = DDS_DynamicData_new(
         ServoControl_get_typecode(), 
         &DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
@@ -554,135 +543,7 @@ ServoControlPlugin_data_to_string(
     DDS_DynamicData_delete(data);
     return DDS_RETCODE_OK;
 }
-
-RTIBool 
-ServoControlPlugin_deserialize(
-    PRESTypePluginEndpointData endpoint_data,
-    ServoControl **sample,
-    RTIBool * drop_sample,
-    struct RTICdrStream *stream,   
-    RTIBool deserialize_encapsulation,
-    RTIBool deserialize_sample, 
-    void *endpoint_plugin_qos)
-{
-
-    RTIBool result;
-    const char *METHOD_NAME = "ServoControlPlugin_deserialize";
-    if (drop_sample) {} /* To avoid warnings */
-
-    stream->_xTypesState.unassignable = RTI_FALSE;
-    result= ServoControlPlugin_deserialize_sample( 
-        endpoint_data, (sample != NULL)?*sample:NULL,
-        stream, deserialize_encapsulation, deserialize_sample, 
-        endpoint_plugin_qos);
-    if (result) {
-        if (stream->_xTypesState.unassignable) {
-            result = RTI_FALSE;
-        }
-    }
-    if (!result && stream->_xTypesState.unassignable ) {
-
-        RTICdrLog_exception(
-            METHOD_NAME, 
-            &RTI_CDR_LOG_UNASSIGNABLE_SAMPLE_OF_TYPE_s, 
-            "ServoControl");
-
-    }
-
-    return result;
-
-}
-
-RTIBool ServoControlPlugin_skip(
-    PRESTypePluginEndpointData endpoint_data,
-    struct RTICdrStream *stream,   
-    RTIBool skip_encapsulation,
-    RTIBool skip_sample, 
-    void *endpoint_plugin_qos)
-{
-    char * position = NULL;
-
-    RTIBool done = RTI_FALSE;
-
-    if (endpoint_data) {} /* To avoid warnings */
-    if (endpoint_plugin_qos) {} /* To avoid warnings */
-
-    if(skip_encapsulation) {
-        if (!RTICdrStream_skipEncapsulation(stream)) {
-            return RTI_FALSE;
-        }
-
-        position = RTICdrStream_resetAlignment(stream);
-    }
-
-    if (skip_sample) {
-
-        if (!RTICdrStream_skipUnsignedShort (stream)) {
-            goto fin; 
-        }
-        if (!RTICdrStream_skipUnsignedShort (stream)) {
-            goto fin; 
-        }
-        if (!RTICdrStream_skipUnsignedShort (stream)) {
-            goto fin; 
-        }
-    }
-
-    done = RTI_TRUE;
-  fin:
-    if (done != RTI_TRUE && 
-    RTICdrStream_getRemainder(stream) >=
-    RTI_CDR_PARAMETER_HEADER_ALIGNMENT) {
-        return RTI_FALSE;   
-    }
-    if(skip_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
-    return RTI_TRUE;
-}
-
-unsigned int 
-ServoControlPlugin_get_serialized_sample_max_size_ex(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool * overflow,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment)
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    unsigned int encapsulation_size = current_alignment;
-
-    if (endpoint_data) {} /* To avoid warnings */ 
-    if (overflow) {} /* To avoid warnings */
-
-    if (include_encapsulation) {
-
-        if (!RTICdrEncapsulation_validEncapsulationId(encapsulation_id)) {
-            return 1;
-        }
-        RTICdrStream_getEncapsulationSize(encapsulation_size);
-        encapsulation_size -= current_alignment;
-        current_alignment = 0;
-        initial_alignment = 0;
-    }
-
-    current_alignment +=RTICdrType_getUnsignedShortMaxSizeSerialized(
-        current_alignment);
-
-    current_alignment +=RTICdrType_getUnsignedShortMaxSizeSerialized(
-        current_alignment);
-
-    current_alignment +=RTICdrType_getUnsignedShortMaxSizeSerialized(
-        current_alignment);
-
-    if (include_encapsulation) {
-        current_alignment += encapsulation_size;
-    }
-    return  current_alignment - initial_alignment;
-}
+#endif
 
 unsigned int 
 ServoControlPlugin_get_serialized_sample_max_size(
@@ -694,7 +555,7 @@ ServoControlPlugin_get_serialized_sample_max_size(
     unsigned int size;
     RTIBool overflow = RTI_FALSE;
 
-    size = ServoControlPlugin_get_serialized_sample_max_size_ex(
+    size = PRESTypePlugin_interpretedGetSerializedSampleMaxSize(
         endpoint_data,&overflow,include_encapsulation,encapsulation_id,current_alignment);
 
     if (overflow) {
@@ -702,106 +563,6 @@ ServoControlPlugin_get_serialized_sample_max_size(
     }
 
     return size;
-}
-
-unsigned int 
-ServoControlPlugin_get_serialized_sample_min_size(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment)
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    unsigned int encapsulation_size = current_alignment;
-
-    if (endpoint_data) {} /* To avoid warnings */ 
-
-    if (include_encapsulation) {
-
-        if (!RTICdrEncapsulation_validEncapsulationId(encapsulation_id)) {
-            return 1;
-        }
-        RTICdrStream_getEncapsulationSize(encapsulation_size);
-        encapsulation_size -= current_alignment;
-        current_alignment = 0;
-        initial_alignment = 0;
-    }
-
-    current_alignment +=RTICdrType_getUnsignedShortMaxSizeSerialized(
-        current_alignment);
-    current_alignment +=RTICdrType_getUnsignedShortMaxSizeSerialized(
-        current_alignment);
-    current_alignment +=RTICdrType_getUnsignedShortMaxSizeSerialized(
-        current_alignment);
-
-    if (include_encapsulation) {
-        current_alignment += encapsulation_size;
-    }
-    return  current_alignment - initial_alignment;
-}
-
-/* Returns the size of the sample in its serialized form (in bytes).
-* It can also be an estimation in excess of the real buffer needed 
-* during a call to the serialize() function.
-* The value reported does not have to include the space for the
-* encapsulation flags.
-*/
-unsigned int
-ServoControlPlugin_get_serialized_sample_size(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment,
-    const ServoControl * sample) 
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    unsigned int encapsulation_size = current_alignment;
-    struct PRESTypePluginDefaultEndpointData epd;   
-
-    if (sample==NULL) {
-        return 0;
-    }
-    if (endpoint_data == NULL) {
-        endpoint_data = (PRESTypePluginEndpointData) &epd;
-        PRESTypePluginDefaultEndpointData_setBaseAlignment(
-            endpoint_data,
-            current_alignment);        
-    }
-
-    if (include_encapsulation) {
-
-        if (!RTICdrEncapsulation_validEncapsulationId(encapsulation_id)) {
-            return 1;
-        }
-        RTICdrStream_getEncapsulationSize(encapsulation_size);
-        encapsulation_size -= current_alignment;
-        current_alignment = 0;
-        initial_alignment = 0;
-        PRESTypePluginDefaultEndpointData_setBaseAlignment(
-            endpoint_data,
-            current_alignment);
-    }
-
-    current_alignment += RTICdrType_getUnsignedShortMaxSizeSerialized(
-        PRESTypePluginDefaultEndpointData_getAlignment(
-            endpoint_data, current_alignment));
-
-    current_alignment += RTICdrType_getUnsignedShortMaxSizeSerialized(
-        PRESTypePluginDefaultEndpointData_getAlignment(
-            endpoint_data, current_alignment));
-
-    current_alignment += RTICdrType_getUnsignedShortMaxSizeSerialized(
-        PRESTypePluginDefaultEndpointData_getAlignment(
-            endpoint_data, current_alignment));
-
-    if (include_encapsulation) {
-        current_alignment += encapsulation_size;
-    }
-    return current_alignment - initial_alignment;
 }
 
 /* --------------------------------------------------------------------------------------
@@ -812,91 +573,6 @@ PRESTypePluginKeyKind
 ServoControlPlugin_get_key_kind(void)
 {
     return PRES_TYPEPLUGIN_NO_KEY;
-}
-
-RTIBool 
-ServoControlPlugin_serialize_key(
-    PRESTypePluginEndpointData endpoint_data,
-    const ServoControl *sample, 
-    struct RTICdrStream *stream,    
-    RTIBool serialize_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    RTIBool serialize_key,
-    void *endpoint_plugin_qos)
-{
-    char * position = NULL;
-
-    if(serialize_encapsulation) {
-        if (!RTICdrStream_serializeAndSetCdrEncapsulation(stream , encapsulation_id)) {
-            return RTI_FALSE;
-        }
-
-        position = RTICdrStream_resetAlignment(stream);
-    }
-
-    if(serialize_key) {
-
-        if (!ServoControlPlugin_serialize(
-            endpoint_data,
-            sample,
-            stream,
-            RTI_FALSE, encapsulation_id,
-            RTI_TRUE,
-            endpoint_plugin_qos)) {
-            return RTI_FALSE;
-        }
-
-    }
-
-    if(serialize_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
-    return RTI_TRUE;
-}
-
-RTIBool ServoControlPlugin_deserialize_key_sample(
-    PRESTypePluginEndpointData endpoint_data,
-    ServoControl *sample, 
-    struct RTICdrStream *stream,
-    RTIBool deserialize_encapsulation,
-    RTIBool deserialize_key,
-    void *endpoint_plugin_qos)
-{
-    try {
-
-        char * position = NULL;
-
-        if (endpoint_data) {} /* To avoid warnings */
-        if (endpoint_plugin_qos) {} /* To avoid warnings */
-
-        if(deserialize_encapsulation) {
-
-            if (!RTICdrStream_deserializeAndSetCdrEncapsulation(stream)) {
-                return RTI_FALSE;
-            }
-
-            position = RTICdrStream_resetAlignment(stream);
-        }
-        if (deserialize_key) {
-
-            if (!ServoControlPlugin_deserialize_sample(
-                endpoint_data, sample, stream, 
-                RTI_FALSE, RTI_TRUE, 
-                endpoint_plugin_qos)) {
-                return RTI_FALSE;
-            }
-        }
-
-        if(deserialize_encapsulation) {
-            RTICdrStream_restoreAlignment(stream,position);
-        }
-
-        return RTI_TRUE;
-
-    } catch (std::bad_alloc&) {
-        return RTI_FALSE;
-    }
 }
 
 RTIBool ServoControlPlugin_deserialize_key(
@@ -911,7 +587,7 @@ RTIBool ServoControlPlugin_deserialize_key(
     RTIBool result;
     if (drop_sample) {} /* To avoid warnings */
     stream->_xTypesState.unassignable = RTI_FALSE;
-    result= ServoControlPlugin_deserialize_key_sample(
+    result= PRESTypePlugin_interpretedDeserializeKey(
         endpoint_data, (sample != NULL)?*sample:NULL, stream,
         deserialize_encapsulation, deserialize_key, endpoint_plugin_qos);
     if (result) {
@@ -919,45 +595,8 @@ RTIBool ServoControlPlugin_deserialize_key(
             result = RTI_FALSE;
         }
     }
-
     return result;    
 
-}
-
-unsigned int
-ServoControlPlugin_get_serialized_key_max_size_ex(
-    PRESTypePluginEndpointData endpoint_data,
-    RTIBool * overflow,
-    RTIBool include_encapsulation,
-    RTIEncapsulationId encapsulation_id,
-    unsigned int current_alignment)
-{
-
-    unsigned int initial_alignment = current_alignment;
-
-    unsigned int encapsulation_size = current_alignment;
-
-    if (endpoint_data) {} /* To avoid warnings */
-    if (overflow) {} /* To avoid warnings */
-
-    if (include_encapsulation) {
-
-        if (!RTICdrEncapsulation_validEncapsulationId(encapsulation_id)) {
-            return 1;
-        }
-        RTICdrStream_getEncapsulationSize(encapsulation_size);
-        encapsulation_size -= current_alignment;
-        current_alignment = 0;
-        initial_alignment = 0;
-    }
-
-    current_alignment += ServoControlPlugin_get_serialized_sample_max_size_ex(
-        endpoint_data, overflow,RTI_FALSE, encapsulation_id, current_alignment);
-
-    if (include_encapsulation) {
-        current_alignment += encapsulation_size;
-    }
-    return current_alignment - initial_alignment;
 }
 
 unsigned int
@@ -969,10 +608,8 @@ ServoControlPlugin_get_serialized_key_max_size(
 {
     unsigned int size;
     RTIBool overflow = RTI_FALSE;
-
-    size = ServoControlPlugin_get_serialized_key_max_size_ex(
+    size = PRESTypePlugin_interpretedGetSerializedKeyMaxSize(
         endpoint_data,&overflow,include_encapsulation,encapsulation_id,current_alignment);
-
     if (overflow) {
         size = RTI_CDR_MAX_SERIALIZED_SIZE;
     }
@@ -980,58 +617,31 @@ ServoControlPlugin_get_serialized_key_max_size(
     return size;
 }
 
-RTIBool 
-ServoControlPlugin_serialized_sample_to_key(
+unsigned int
+ServoControlPlugin_get_serialized_key_max_size_for_keyhash(
     PRESTypePluginEndpointData endpoint_data,
-    ServoControl *sample,
-    struct RTICdrStream *stream, 
-    RTIBool deserialize_encapsulation,  
-    RTIBool deserialize_key, 
-    void *endpoint_plugin_qos)
+    RTIEncapsulationId encapsulation_id,
+    unsigned int current_alignment)
 {
-    char * position = NULL;
-
-    RTIBool done = RTI_FALSE;
-    RTIBool error = RTI_FALSE;
-
-    if (stream == NULL) {
-        error = RTI_TRUE;
-        goto fin;
-    }
-    if(deserialize_encapsulation) {
-        if (!RTICdrStream_deserializeAndSetCdrEncapsulation(stream)) {
-            return RTI_FALSE;
-        }
-        position = RTICdrStream_resetAlignment(stream);
+    unsigned int size;
+    RTIBool overflow = RTI_FALSE;
+    size = PRESTypePlugin_interpretedGetSerializedKeyMaxSizeForKeyhash(
+        endpoint_data,
+        &overflow,
+        encapsulation_id,
+        current_alignment);
+    if (overflow) {
+        size = RTI_CDR_MAX_SERIALIZED_SIZE;
     }
 
-    if (deserialize_key) {
+    return size;
+}
 
-        if (!ServoControlPlugin_deserialize_sample(
-            endpoint_data, sample, stream, RTI_FALSE, 
-            RTI_TRUE, endpoint_plugin_qos)) {
-            return RTI_FALSE;
-        }
-
-    }
-
-    done = RTI_TRUE;
-  fin:
-    if(!error) {
-        if (done != RTI_TRUE && 
-        RTICdrStream_getRemainder(stream) >=
-        RTI_CDR_PARAMETER_HEADER_ALIGNMENT) {
-            return RTI_FALSE;   
-        }
-    } else {
-        return RTI_FALSE;
-    }       
-
-    if(deserialize_encapsulation) {
-        RTICdrStream_restoreAlignment(stream,position);
-    }
-
-    return RTI_TRUE;
+struct RTIXCdrInterpreterPrograms *ServoControlPlugin_get_programs()
+{
+    return ::rti::xcdr::get_cdr_serialization_programs<
+    ServoControl, 
+    true, true, true>();
 }
 
 /* ------------------------------------------------------------------------
@@ -1075,27 +685,27 @@ struct PRESTypePlugin *ServoControlPlugin_new(void)
     plugin->destroySampleFnc =
     (PRESTypePluginDestroySampleFunction)
     ServoControlPlugin_destroy_sample;
+    plugin->finalizeOptionalMembersFnc =
+    (PRESTypePluginFinalizeOptionalMembersFunction)
+    ServoControl_finalize_optional_members;
 
-    plugin->serializeFnc =
-    (PRESTypePluginSerializeFunction)
-    ServoControlPlugin_serialize;
+    plugin->serializeFnc = 
+    (PRESTypePluginSerializeFunction) PRESTypePlugin_interpretedSerialize;
     plugin->deserializeFnc =
-    (PRESTypePluginDeserializeFunction)
-    ServoControlPlugin_deserialize;
+    (PRESTypePluginDeserializeFunction) PRESTypePlugin_interpretedDeserializeWithAlloc;
     plugin->getSerializedSampleMaxSizeFnc =
     (PRESTypePluginGetSerializedSampleMaxSizeFunction)
     ServoControlPlugin_get_serialized_sample_max_size;
     plugin->getSerializedSampleMinSizeFnc =
     (PRESTypePluginGetSerializedSampleMinSizeFunction)
-    ServoControlPlugin_get_serialized_sample_min_size;
-
+    PRESTypePlugin_interpretedGetSerializedSampleMinSize;
+    plugin->getDeserializedSampleMaxSizeFnc = NULL; 
     plugin->getSampleFnc =
     (PRESTypePluginGetSampleFunction)
     ServoControlPlugin_get_sample;
     plugin->returnSampleFnc =
     (PRESTypePluginReturnSampleFunction)
     ServoControlPlugin_return_sample;
-
     plugin->getKeyKindFnc =
     (PRESTypePluginGetKeyKindFunction)
     ServoControlPlugin_get_key_kind;
@@ -1113,8 +723,11 @@ struct PRESTypePlugin *ServoControlPlugin_new(void)
     plugin->instanceToKeyHashFnc = NULL;
     plugin->serializedSampleToKeyHashFnc = NULL;
     plugin->serializedKeyToKeyHashFnc = NULL;    
+    #ifdef NDDS_STANDALONE_TYPE
+    plugin->typeCode = NULL; 
+    #else
     plugin->typeCode =  (struct RTICdrTypeCode *)ServoControl_get_typecode();
-
+    #endif
     plugin->languageKind = PRES_TYPEPLUGIN_CPP_LANG;
 
     /* Serialized buffer */
@@ -1124,12 +737,20 @@ struct PRESTypePlugin *ServoControlPlugin_new(void)
     plugin->returnBuffer = 
     (PRESTypePluginReturnBufferFunction)
     ServoControlPlugin_return_buffer;
+    plugin->getBufferWithParams = NULL;
+    plugin->returnBufferWithParams = NULL;  
     plugin->getSerializedSampleSizeFnc =
     (PRESTypePluginGetSerializedSampleSizeFunction)
-    ServoControlPlugin_get_serialized_sample_size;
+    PRESTypePlugin_interpretedGetSerializedSampleSize;
+
+    plugin->getWriterLoanedSampleFnc = NULL; 
+    plugin->returnWriterLoanedSampleFnc = NULL;
+    plugin->returnWriterLoanedSampleFromCookieFnc = NULL;
+    plugin->validateWriterLoanedSampleFnc = NULL;
+    plugin->setWriterLoanedSampleSerializedStateFnc = NULL;
 
     plugin->endpointTypeName = ServoControlTYPENAME;
-
+    plugin->isMetpType = RTI_FALSE;
     return plugin;
 }
 

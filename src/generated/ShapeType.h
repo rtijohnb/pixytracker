@@ -16,6 +16,7 @@ or consult the RTI Connext manual.
 #ifndef ndds_cpp_h
 #include "ndds/ndds_cpp.h"
 #endif
+#include "rti/xcdr/Interpreter.hpp"
 #else
 #include "ndds_standalone_type.h"
 #endif
@@ -27,14 +28,19 @@ typedef enum ShapeFillKind
     HORIZONTAL_HATCH_FILL ,      
     VERTICAL_HATCH_FILL      
 } ShapeFillKind;
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, start exporting symbols.
 */
 #undef NDDSUSERDllExport
 #define NDDSUSERDllExport __declspec(dllexport)
 #endif
 
+#ifndef NDDS_STANDALONE_TYPE
 NDDSUSERDllExport DDS_TypeCode* ShapeFillKind_get_typecode(void); /* Type code */
+NDDSUSERDllExport RTIXCdrTypePlugin *ShapeFillKind_get_type_plugin_info(void);
+NDDSUSERDllExport RTIXCdrSampleAccessInfo *ShapeFillKind_get_sample_access_info(void);
+NDDSUSERDllExport RTIXCdrSampleAccessInfo *ShapeFillKind_get_sample_seq_access_info(void);
+#endif
 
 DDS_SEQUENCE(ShapeFillKindSeq, ShapeFillKind);
 
@@ -50,6 +56,10 @@ NDDSUSERDllExport
 RTIBool ShapeFillKind_initialize_w_params(
     ShapeFillKind* self,
     const struct DDS_TypeAllocationParams_t * allocParams);  
+
+NDDSUSERDllExport
+RTIBool ShapeFillKind_finalize_w_return(
+    ShapeFillKind* self);
 
 NDDSUSERDllExport
 void ShapeFillKind_finalize(
@@ -73,7 +83,7 @@ RTIBool ShapeFillKind_copy(
     ShapeFillKind* dst,
     const ShapeFillKind* src);
 
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, stop exporting symbols.
 */
 #undef NDDSUSERDllExport
@@ -91,7 +101,6 @@ class ShapeTypeTypeSupport;
 class ShapeTypeDataWriter;
 class ShapeTypeDataReader;
 #endif
-
 class ShapeType 
 {
   public:
@@ -108,14 +117,19 @@ class ShapeType
     DDS_Long   shapesize ;
 
 };
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, start exporting symbols.
 */
 #undef NDDSUSERDllExport
 #define NDDSUSERDllExport __declspec(dllexport)
 #endif
 
+#ifndef NDDS_STANDALONE_TYPE
 NDDSUSERDllExport DDS_TypeCode* ShapeType_get_typecode(void); /* Type code */
+NDDSUSERDllExport RTIXCdrTypePlugin *ShapeType_get_type_plugin_info(void);
+NDDSUSERDllExport RTIXCdrSampleAccessInfo *ShapeType_get_sample_access_info(void);
+NDDSUSERDllExport RTIXCdrSampleAccessInfo *ShapeType_get_sample_seq_access_info(void);
+#endif
 
 DDS_SEQUENCE(ShapeTypeSeq, ShapeType);
 
@@ -131,6 +145,10 @@ NDDSUSERDllExport
 RTIBool ShapeType_initialize_w_params(
     ShapeType* self,
     const struct DDS_TypeAllocationParams_t * allocParams);  
+
+NDDSUSERDllExport
+RTIBool ShapeType_finalize_w_return(
+    ShapeType* self);
 
 NDDSUSERDllExport
 void ShapeType_finalize(
@@ -154,13 +172,12 @@ RTIBool ShapeType_copy(
     ShapeType* dst,
     const ShapeType* src);
 
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, stop exporting symbols.
 */
 #undef NDDSUSERDllExport
 #define NDDSUSERDllExport
 #endif
-
 extern "C" {
 
     extern const char *ShapeTypeExtendedTYPENAME;
@@ -173,7 +190,6 @@ class ShapeTypeExtendedTypeSupport;
 class ShapeTypeExtendedDataWriter;
 class ShapeTypeExtendedDataReader;
 #endif
-
 class ShapeTypeExtended 
 : public ShapeType{
   public:
@@ -188,14 +204,19 @@ class ShapeTypeExtended
     DDS_Float   angle ;
 
 };
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, start exporting symbols.
 */
 #undef NDDSUSERDllExport
 #define NDDSUSERDllExport __declspec(dllexport)
 #endif
 
+#ifndef NDDS_STANDALONE_TYPE
 NDDSUSERDllExport DDS_TypeCode* ShapeTypeExtended_get_typecode(void); /* Type code */
+NDDSUSERDllExport RTIXCdrTypePlugin *ShapeTypeExtended_get_type_plugin_info(void);
+NDDSUSERDllExport RTIXCdrSampleAccessInfo *ShapeTypeExtended_get_sample_access_info(void);
+NDDSUSERDllExport RTIXCdrSampleAccessInfo *ShapeTypeExtended_get_sample_seq_access_info(void);
+#endif
 
 DDS_SEQUENCE(ShapeTypeExtendedSeq, ShapeTypeExtended);
 
@@ -211,6 +232,10 @@ NDDSUSERDllExport
 RTIBool ShapeTypeExtended_initialize_w_params(
     ShapeTypeExtended* self,
     const struct DDS_TypeAllocationParams_t * allocParams);  
+
+NDDSUSERDllExport
+RTIBool ShapeTypeExtended_finalize_w_return(
+    ShapeTypeExtended* self);
 
 NDDSUSERDllExport
 void ShapeTypeExtended_finalize(
@@ -234,13 +259,13 @@ RTIBool ShapeTypeExtended_copy(
     ShapeTypeExtended* dst,
     const ShapeTypeExtended* src);
 
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, stop exporting symbols.
 */
 #undef NDDSUSERDllExport
 #define NDDSUSERDllExport
 #endif
-static const DDS_Char * DEFAULT_CAM_CONFIG_TOPIC_NAME= "pixy/camconfig";
+static const DDS_Char * const DEFAULT_CAM_CONFIG_TOPIC_NAME= "pixy/camconfig";
 extern "C" {
 
     extern const char *PixyCamConfigTYPENAME;
@@ -253,7 +278,6 @@ class PixyCamConfigTypeSupport;
 class PixyCamConfigDataWriter;
 class PixyCamConfigDataReader;
 #endif
-
 class PixyCamConfig 
 {
   public:
@@ -267,14 +291,19 @@ class PixyCamConfig
     DDS_Boolean   profileEnabled [7];
 
 };
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, start exporting symbols.
 */
 #undef NDDSUSERDllExport
 #define NDDSUSERDllExport __declspec(dllexport)
 #endif
 
+#ifndef NDDS_STANDALONE_TYPE
 NDDSUSERDllExport DDS_TypeCode* PixyCamConfig_get_typecode(void); /* Type code */
+NDDSUSERDllExport RTIXCdrTypePlugin *PixyCamConfig_get_type_plugin_info(void);
+NDDSUSERDllExport RTIXCdrSampleAccessInfo *PixyCamConfig_get_sample_access_info(void);
+NDDSUSERDllExport RTIXCdrSampleAccessInfo *PixyCamConfig_get_sample_seq_access_info(void);
+#endif
 
 DDS_SEQUENCE(PixyCamConfigSeq, PixyCamConfig);
 
@@ -290,6 +319,10 @@ NDDSUSERDllExport
 RTIBool PixyCamConfig_initialize_w_params(
     PixyCamConfig* self,
     const struct DDS_TypeAllocationParams_t * allocParams);  
+
+NDDSUSERDllExport
+RTIBool PixyCamConfig_finalize_w_return(
+    PixyCamConfig* self);
 
 NDDSUSERDllExport
 void PixyCamConfig_finalize(
@@ -313,11 +346,34 @@ RTIBool PixyCamConfig_copy(
     PixyCamConfig* dst,
     const PixyCamConfig* src);
 
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, stop exporting symbols.
 */
 #undef NDDSUSERDllExport
 #define NDDSUSERDllExport
+#endif
+
+#ifndef NDDS_STANDALONE_TYPE
+namespace rti { 
+    namespace xcdr {
+        template <>
+        struct type_code<ShapeType> {
+            static const RTIXCdrTypeCode * get();
+        };
+
+        template <>
+        struct type_code<ShapeTypeExtended> {
+            static const RTIXCdrTypeCode * get();
+        };
+
+        template <>
+        struct type_code<PixyCamConfig> {
+            static const RTIXCdrTypeCode * get();
+        };
+
+    } 
+}
+
 #endif
 
 #endif /* ShapeType */

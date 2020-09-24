@@ -34,7 +34,7 @@ const char *sigName[] = {
 #define INDEX_GREEN 3
 #define INDEX_CYAN 4
 #define INDEX_BLUE 5
-#define INDEX_VIOLET 6
+#define INDEX_PURPLE 6
 
 #define S0_LOWER_LIMIT -200
 #define S0_UPPER_LIMIT 200
@@ -133,7 +133,7 @@ void gimbal_update(struct Gimbal *  gimbal, int32_t error)
 	int32_t  P_gain;
 	int32_t  D_gain;
 
-	if(gimbal->previous_error != 0x80000000L)
+	if(gimbal->previous_error != 0x80000000)
 	{
 		error_delta = error - gimbal->previous_error;
 		P_gain      = gimbal->proportional_gain;
@@ -195,7 +195,6 @@ public:
 void ServoTypeListener::on_publication_matched(DDSDataWriter *writer, const DDS_PublicationMatchedStatus &status)
 {
 	ServoControlDataWriter *servo_writer = NULL;
-	DDS_ReturnCode_t retcode;
 
 	servo_writer = ServoControlDataWriter::narrow(writer);
 	if (NULL==servo_writer) return;
@@ -248,7 +247,6 @@ public:
 void ShapeTypeListener::on_subscription_matched(DDSDataReader *reader, const DDS_SubscriptionMatchedStatus &status)
 {
 	ShapeTypeExtendedDataReader *shape_reader = NULL;
-	DDS_ReturnCode_t retcode;
 
 	shape_reader = ShapeTypeExtendedDataReader::narrow(reader);
 	if (NULL == shape_reader) return;
@@ -327,8 +325,10 @@ int track (int domainId, unsigned int tracked_channel)
 	char channel_filter[50];
 
 	// Create the domain participant
-	participant = DDSTheParticipantFactory->create_participant_with_profile(domainId, "PixyTracker_Library", "PixyTracker_Active_Profile",
-			NULL, DDS_STATUS_MASK_NONE);
+	participant = DDSTheParticipantFactory->create_participant_with_profile(domainId,
+																			"PixyTracker_Library",
+																			"PixyTracker_Profile",
+																			NULL, DDS_STATUS_MASK_NONE);
 //	participant = DDSTheParticipantFactory->create_participant(0, DDS_PARTICIPANT_QOS_DEFAULT,NULL,DDS_STATUS_MASK_NONE);
 	if (participant == NULL) {
 		fprintf(stderr, "create participant error\n");
@@ -374,8 +374,8 @@ int track (int domainId, unsigned int tracked_channel)
 	}
 
 	// Create a data reader and a data writer
-	reader = participant->create_datareader_with_profile(cft, "PixyTracker_Library", "PixyTracker_Active_Profile", shape_listener, DDS_STATUS_MASK_ALL);
-	writer = participant->create_datawriter_with_profile(servo_topic, "PixyTracker_Library", "PixyTracker_Active_Profile", servo_listener, DDS_STATUS_MASK_ALL);
+	reader = participant->create_datareader_with_profile(cft, "PixyTracker_Library", "PixyTracker_Profile", shape_listener, DDS_STATUS_MASK_ALL);
+	writer = participant->create_datawriter_with_profile(servo_topic, "PixyTracker_Library", "PixyTracker_Profile", servo_listener, DDS_STATUS_MASK_ALL);
 	if ((reader == NULL) || (writer == NULL))
 	{
         fprintf(stderr, "create reader and writer\n");
@@ -434,7 +434,6 @@ int track (int domainId, unsigned int tracked_channel)
 int main (int argc, char *argv[])
 {
     int domainId = 53;
-    int return_value;
     unsigned int trackedChannel = INDEX_GREEN;
 
     signal(SIGINT, handle_SIGINT);

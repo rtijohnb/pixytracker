@@ -20,7 +20,7 @@ struct RTICdrStream;
 #include "pres/pres_typePlugin.h"
 #endif
 
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, start exporting symbols.
 */
 #undef NDDSUSERDllExport
@@ -33,41 +33,6 @@ extern "C" {
     (De)Serialize functions:
     * ------------------------------------------------------------------------- */
 
-    NDDSUSERDllExport extern RTIBool 
-    ShapeFillKindPlugin_serialize(
-        PRESTypePluginEndpointData endpoint_data,
-        const ShapeFillKind *sample,
-        struct RTICdrStream *stream, 
-        RTIBool serialize_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        RTIBool serialize_sample, 
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern RTIBool 
-    ShapeFillKindPlugin_deserialize_sample(
-        PRESTypePluginEndpointData endpoint_data,
-        ShapeFillKind *sample, 
-        struct RTICdrStream *stream,
-        RTIBool deserialize_encapsulation,
-        RTIBool deserialize_sample, 
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern RTIBool
-    ShapeFillKindPlugin_skip(
-        PRESTypePluginEndpointData endpoint_data,
-        struct RTICdrStream *stream, 
-        RTIBool skip_encapsulation,  
-        RTIBool skip_sample, 
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern unsigned int 
-    ShapeFillKindPlugin_get_serialized_sample_max_size_ex(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool * overflow,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment);    
-
     NDDSUSERDllExport extern unsigned int 
     ShapeFillKindPlugin_get_serialized_sample_max_size(
         PRESTypePluginEndpointData endpoint_data,
@@ -75,32 +40,9 @@ extern "C" {
         RTIEncapsulationId encapsulation_id,
         unsigned int current_alignment);
 
-    NDDSUSERDllExport extern unsigned int 
-    ShapeFillKindPlugin_get_serialized_sample_min_size(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment);
-
-    NDDSUSERDllExport extern unsigned int
-    ShapeFillKindPlugin_get_serialized_sample_size(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment,
-        const ShapeFillKind * sample);
-
     /* --------------------------------------------------------------------------------------
     Key Management functions:
     * -------------------------------------------------------------------------------------- */
-
-    NDDSUSERDllExport extern unsigned int 
-    ShapeFillKindPlugin_get_serialized_key_max_size_ex(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool * overflow,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment);
 
     NDDSUSERDllExport extern unsigned int 
     ShapeFillKindPlugin_get_serialized_key_max_size(
@@ -109,33 +51,11 @@ extern "C" {
         RTIEncapsulationId encapsulation_id,
         unsigned int current_alignment);
 
-    NDDSUSERDllExport extern RTIBool 
-    ShapeFillKindPlugin_serialize_key(
+    NDDSUSERDllExport extern unsigned int 
+    ShapeFillKindPlugin_get_serialized_key_max_size_for_keyhash(
         PRESTypePluginEndpointData endpoint_data,
-        const ShapeFillKind *sample,
-        struct RTICdrStream *stream,
-        RTIBool serialize_encapsulation,
         RTIEncapsulationId encapsulation_id,
-        RTIBool serialize_key,
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern RTIBool 
-    ShapeFillKindPlugin_deserialize_key_sample(
-        PRESTypePluginEndpointData endpoint_data,
-        ShapeFillKind * sample,
-        struct RTICdrStream *stream,
-        RTIBool deserialize_encapsulation,
-        RTIBool deserialize_key,
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern RTIBool
-    ShapeFillKindPlugin_serialized_sample_to_key(
-        PRESTypePluginEndpointData endpoint_data,
-        ShapeFillKind *sample,
-        struct RTICdrStream *stream, 
-        RTIBool deserialize_encapsulation,  
-        RTIBool deserialize_key, 
-        void *endpoint_plugin_qos);
+        unsigned int current_alignment);
 
     /* ----------------------------------------------------------------------------
     Support functions:
@@ -162,8 +82,9 @@ extern "C" {
     typedef  class ShapeType ShapeTypeKeyHolder;
 
     #define ShapeTypePlugin_get_sample PRESTypePluginDefaultEndpointData_getSample 
+
     #define ShapeTypePlugin_get_buffer PRESTypePluginDefaultEndpointData_getBuffer 
-    #define ShapeTypePlugin_return_buffer PRESTypePluginDefaultEndpointData_returnBuffer 
+    #define ShapeTypePlugin_return_buffer PRESTypePluginDefaultEndpointData_returnBuffer
 
     #define ShapeTypePlugin_get_key PRESTypePluginDefaultEndpointData_getKey 
     #define ShapeTypePlugin_return_key PRESTypePluginDefaultEndpointData_returnKey
@@ -266,30 +187,18 @@ extern "C" {
     (De)Serialize functions:
     * ------------------------------------------------------------------------- */
 
-    NDDSUSERDllExport extern RTIBool 
-    ShapeTypePlugin_serialize(
-        PRESTypePluginEndpointData endpoint_data,
-        const ShapeType *sample,
-        struct RTICdrStream *stream, 
-        RTIBool serialize_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        RTIBool serialize_sample, 
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern RTIBool 
-    ShapeTypePlugin_deserialize_sample(
-        PRESTypePluginEndpointData endpoint_data,
-        ShapeType *sample, 
-        struct RTICdrStream *stream,
-        RTIBool deserialize_encapsulation,
-        RTIBool deserialize_sample, 
-        void *endpoint_plugin_qos);
-
     NDDSUSERDllExport extern RTIBool
     ShapeTypePlugin_serialize_to_cdr_buffer(
         char * buffer,
         unsigned int * length,
         const ShapeType *sample); 
+
+    NDDSUSERDllExport extern RTIBool
+    ShapeTypePlugin_serialize_to_cdr_buffer_ex(
+        char *buffer,
+        unsigned int *length,
+        const ShapeType *sample,
+        DDS_DataRepresentationId_t representation);
 
     NDDSUSERDllExport extern RTIBool 
     ShapeTypePlugin_deserialize(
@@ -306,28 +215,14 @@ extern "C" {
         ShapeType *sample,
         const char * buffer,
         unsigned int length);    
+    #ifndef NDDS_STANDALONE_TYPE
     NDDSUSERDllExport extern DDS_ReturnCode_t
     ShapeTypePlugin_data_to_string(
         const ShapeType *sample,
         char *str,
         DDS_UnsignedLong *str_size, 
         const struct DDS_PrintFormatProperty *property);    
-
-    NDDSUSERDllExport extern RTIBool
-    ShapeTypePlugin_skip(
-        PRESTypePluginEndpointData endpoint_data,
-        struct RTICdrStream *stream, 
-        RTIBool skip_encapsulation,  
-        RTIBool skip_sample, 
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern unsigned int 
-    ShapeTypePlugin_get_serialized_sample_max_size_ex(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool * overflow,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment);    
+    #endif
 
     NDDSUSERDllExport extern unsigned int 
     ShapeTypePlugin_get_serialized_sample_max_size(
@@ -336,34 +231,11 @@ extern "C" {
         RTIEncapsulationId encapsulation_id,
         unsigned int current_alignment);
 
-    NDDSUSERDllExport extern unsigned int 
-    ShapeTypePlugin_get_serialized_sample_min_size(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment);
-
-    NDDSUSERDllExport extern unsigned int
-    ShapeTypePlugin_get_serialized_sample_size(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment,
-        const ShapeType * sample);
-
     /* --------------------------------------------------------------------------------------
     Key Management functions:
     * -------------------------------------------------------------------------------------- */
     NDDSUSERDllExport extern PRESTypePluginKeyKind 
     ShapeTypePlugin_get_key_kind(void);
-
-    NDDSUSERDllExport extern unsigned int 
-    ShapeTypePlugin_get_serialized_key_max_size_ex(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool * overflow,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment);
 
     NDDSUSERDllExport extern unsigned int 
     ShapeTypePlugin_get_serialized_key_max_size(
@@ -372,24 +244,11 @@ extern "C" {
         RTIEncapsulationId encapsulation_id,
         unsigned int current_alignment);
 
-    NDDSUSERDllExport extern RTIBool 
-    ShapeTypePlugin_serialize_key(
+    NDDSUSERDllExport extern unsigned int 
+    ShapeTypePlugin_get_serialized_key_max_size_for_keyhash(
         PRESTypePluginEndpointData endpoint_data,
-        const ShapeType *sample,
-        struct RTICdrStream *stream,
-        RTIBool serialize_encapsulation,
         RTIEncapsulationId encapsulation_id,
-        RTIBool serialize_key,
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern RTIBool 
-    ShapeTypePlugin_deserialize_key_sample(
-        PRESTypePluginEndpointData endpoint_data,
-        ShapeType * sample,
-        struct RTICdrStream *stream,
-        RTIBool deserialize_encapsulation,
-        RTIBool deserialize_key,
-        void *endpoint_plugin_qos);
+        unsigned int current_alignment);
 
     NDDSUSERDllExport extern RTIBool 
     ShapeTypePlugin_deserialize_key(
@@ -399,15 +258,6 @@ extern "C" {
         struct RTICdrStream *stream,
         RTIBool deserialize_encapsulation,
         RTIBool deserialize_key,
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern RTIBool
-    ShapeTypePlugin_serialized_sample_to_key(
-        PRESTypePluginEndpointData endpoint_data,
-        ShapeType *sample,
-        struct RTICdrStream *stream, 
-        RTIBool deserialize_encapsulation,  
-        RTIBool deserialize_key, 
         void *endpoint_plugin_qos);
 
     NDDSUSERDllExport extern RTIBool 
@@ -426,7 +276,8 @@ extern "C" {
     ShapeTypePlugin_instance_to_keyhash(
         PRESTypePluginEndpointData endpoint_data,
         DDS_KeyHash_t *keyhash,
-        const ShapeType *instance);
+        const ShapeType *instance,
+        RTIEncapsulationId encapsulationId);
 
     NDDSUSERDllExport extern RTIBool 
     ShapeTypePlugin_serialized_sample_to_keyhash(
@@ -435,6 +286,9 @@ extern "C" {
         DDS_KeyHash_t *keyhash,
         RTIBool deserialize_encapsulation,
         void *endpoint_plugin_qos); 
+
+    NDDSUSERDllExport extern
+    struct RTIXCdrInterpreterPrograms *ShapeTypePlugin_get_programs();
 
     /* Plugin Functions */
     NDDSUSERDllExport extern struct PRESTypePlugin*
@@ -460,8 +314,9 @@ extern "C" {
     typedef  class ShapeTypeExtended ShapeTypeExtendedKeyHolder;
 
     #define ShapeTypeExtendedPlugin_get_sample PRESTypePluginDefaultEndpointData_getSample 
+
     #define ShapeTypeExtendedPlugin_get_buffer PRESTypePluginDefaultEndpointData_getBuffer 
-    #define ShapeTypeExtendedPlugin_return_buffer PRESTypePluginDefaultEndpointData_returnBuffer 
+    #define ShapeTypeExtendedPlugin_return_buffer PRESTypePluginDefaultEndpointData_returnBuffer
 
     #define ShapeTypeExtendedPlugin_get_key PRESTypePluginDefaultEndpointData_getKey 
     #define ShapeTypeExtendedPlugin_return_key PRESTypePluginDefaultEndpointData_returnKey
@@ -564,30 +419,18 @@ extern "C" {
     (De)Serialize functions:
     * ------------------------------------------------------------------------- */
 
-    NDDSUSERDllExport extern RTIBool 
-    ShapeTypeExtendedPlugin_serialize(
-        PRESTypePluginEndpointData endpoint_data,
-        const ShapeTypeExtended *sample,
-        struct RTICdrStream *stream, 
-        RTIBool serialize_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        RTIBool serialize_sample, 
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern RTIBool 
-    ShapeTypeExtendedPlugin_deserialize_sample(
-        PRESTypePluginEndpointData endpoint_data,
-        ShapeTypeExtended *sample, 
-        struct RTICdrStream *stream,
-        RTIBool deserialize_encapsulation,
-        RTIBool deserialize_sample, 
-        void *endpoint_plugin_qos);
-
     NDDSUSERDllExport extern RTIBool
     ShapeTypeExtendedPlugin_serialize_to_cdr_buffer(
         char * buffer,
         unsigned int * length,
         const ShapeTypeExtended *sample); 
+
+    NDDSUSERDllExport extern RTIBool
+    ShapeTypeExtendedPlugin_serialize_to_cdr_buffer_ex(
+        char *buffer,
+        unsigned int *length,
+        const ShapeTypeExtended *sample,
+        DDS_DataRepresentationId_t representation);
 
     NDDSUSERDllExport extern RTIBool 
     ShapeTypeExtendedPlugin_deserialize(
@@ -604,28 +447,14 @@ extern "C" {
         ShapeTypeExtended *sample,
         const char * buffer,
         unsigned int length);    
+    #ifndef NDDS_STANDALONE_TYPE
     NDDSUSERDllExport extern DDS_ReturnCode_t
     ShapeTypeExtendedPlugin_data_to_string(
         const ShapeTypeExtended *sample,
         char *str,
         DDS_UnsignedLong *str_size, 
         const struct DDS_PrintFormatProperty *property);    
-
-    NDDSUSERDllExport extern RTIBool
-    ShapeTypeExtendedPlugin_skip(
-        PRESTypePluginEndpointData endpoint_data,
-        struct RTICdrStream *stream, 
-        RTIBool skip_encapsulation,  
-        RTIBool skip_sample, 
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern unsigned int 
-    ShapeTypeExtendedPlugin_get_serialized_sample_max_size_ex(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool * overflow,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment);    
+    #endif
 
     NDDSUSERDllExport extern unsigned int 
     ShapeTypeExtendedPlugin_get_serialized_sample_max_size(
@@ -634,34 +463,11 @@ extern "C" {
         RTIEncapsulationId encapsulation_id,
         unsigned int current_alignment);
 
-    NDDSUSERDllExport extern unsigned int 
-    ShapeTypeExtendedPlugin_get_serialized_sample_min_size(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment);
-
-    NDDSUSERDllExport extern unsigned int
-    ShapeTypeExtendedPlugin_get_serialized_sample_size(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment,
-        const ShapeTypeExtended * sample);
-
     /* --------------------------------------------------------------------------------------
     Key Management functions:
     * -------------------------------------------------------------------------------------- */
     NDDSUSERDllExport extern PRESTypePluginKeyKind 
     ShapeTypeExtendedPlugin_get_key_kind(void);
-
-    NDDSUSERDllExport extern unsigned int 
-    ShapeTypeExtendedPlugin_get_serialized_key_max_size_ex(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool * overflow,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment);
 
     NDDSUSERDllExport extern unsigned int 
     ShapeTypeExtendedPlugin_get_serialized_key_max_size(
@@ -670,24 +476,11 @@ extern "C" {
         RTIEncapsulationId encapsulation_id,
         unsigned int current_alignment);
 
-    NDDSUSERDllExport extern RTIBool 
-    ShapeTypeExtendedPlugin_serialize_key(
+    NDDSUSERDllExport extern unsigned int 
+    ShapeTypeExtendedPlugin_get_serialized_key_max_size_for_keyhash(
         PRESTypePluginEndpointData endpoint_data,
-        const ShapeTypeExtended *sample,
-        struct RTICdrStream *stream,
-        RTIBool serialize_encapsulation,
         RTIEncapsulationId encapsulation_id,
-        RTIBool serialize_key,
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern RTIBool 
-    ShapeTypeExtendedPlugin_deserialize_key_sample(
-        PRESTypePluginEndpointData endpoint_data,
-        ShapeTypeExtended * sample,
-        struct RTICdrStream *stream,
-        RTIBool deserialize_encapsulation,
-        RTIBool deserialize_key,
-        void *endpoint_plugin_qos);
+        unsigned int current_alignment);
 
     NDDSUSERDllExport extern RTIBool 
     ShapeTypeExtendedPlugin_deserialize_key(
@@ -697,15 +490,6 @@ extern "C" {
         struct RTICdrStream *stream,
         RTIBool deserialize_encapsulation,
         RTIBool deserialize_key,
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern RTIBool
-    ShapeTypeExtendedPlugin_serialized_sample_to_key(
-        PRESTypePluginEndpointData endpoint_data,
-        ShapeTypeExtended *sample,
-        struct RTICdrStream *stream, 
-        RTIBool deserialize_encapsulation,  
-        RTIBool deserialize_key, 
         void *endpoint_plugin_qos);
 
     NDDSUSERDllExport extern RTIBool 
@@ -724,7 +508,8 @@ extern "C" {
     ShapeTypeExtendedPlugin_instance_to_keyhash(
         PRESTypePluginEndpointData endpoint_data,
         DDS_KeyHash_t *keyhash,
-        const ShapeTypeExtended *instance);
+        const ShapeTypeExtended *instance,
+        RTIEncapsulationId encapsulationId);
 
     NDDSUSERDllExport extern RTIBool 
     ShapeTypeExtendedPlugin_serialized_sample_to_keyhash(
@@ -734,6 +519,9 @@ extern "C" {
         RTIBool deserialize_encapsulation,
         void *endpoint_plugin_qos); 
 
+    NDDSUSERDllExport extern
+    struct RTIXCdrInterpreterPrograms *ShapeTypeExtendedPlugin_get_programs();
+
     /* Plugin Functions */
     NDDSUSERDllExport extern struct PRESTypePlugin*
     ShapeTypeExtendedPlugin_new(void);
@@ -742,8 +530,9 @@ extern "C" {
     ShapeTypeExtendedPlugin_delete(struct PRESTypePlugin *);
 
     #define PixyCamConfigPlugin_get_sample PRESTypePluginDefaultEndpointData_getSample 
+
     #define PixyCamConfigPlugin_get_buffer PRESTypePluginDefaultEndpointData_getBuffer 
-    #define PixyCamConfigPlugin_return_buffer PRESTypePluginDefaultEndpointData_returnBuffer 
+    #define PixyCamConfigPlugin_return_buffer PRESTypePluginDefaultEndpointData_returnBuffer
 
     #define PixyCamConfigPlugin_create_sample PRESTypePluginDefaultEndpointData_createSample 
     #define PixyCamConfigPlugin_destroy_sample PRESTypePluginDefaultEndpointData_deleteSample 
@@ -829,30 +618,18 @@ extern "C" {
     (De)Serialize functions:
     * ------------------------------------------------------------------------- */
 
-    NDDSUSERDllExport extern RTIBool 
-    PixyCamConfigPlugin_serialize(
-        PRESTypePluginEndpointData endpoint_data,
-        const PixyCamConfig *sample,
-        struct RTICdrStream *stream, 
-        RTIBool serialize_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        RTIBool serialize_sample, 
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern RTIBool 
-    PixyCamConfigPlugin_deserialize_sample(
-        PRESTypePluginEndpointData endpoint_data,
-        PixyCamConfig *sample, 
-        struct RTICdrStream *stream,
-        RTIBool deserialize_encapsulation,
-        RTIBool deserialize_sample, 
-        void *endpoint_plugin_qos);
-
     NDDSUSERDllExport extern RTIBool
     PixyCamConfigPlugin_serialize_to_cdr_buffer(
         char * buffer,
         unsigned int * length,
         const PixyCamConfig *sample); 
+
+    NDDSUSERDllExport extern RTIBool
+    PixyCamConfigPlugin_serialize_to_cdr_buffer_ex(
+        char *buffer,
+        unsigned int *length,
+        const PixyCamConfig *sample,
+        DDS_DataRepresentationId_t representation);
 
     NDDSUSERDllExport extern RTIBool 
     PixyCamConfigPlugin_deserialize(
@@ -869,28 +646,14 @@ extern "C" {
         PixyCamConfig *sample,
         const char * buffer,
         unsigned int length);    
+    #ifndef NDDS_STANDALONE_TYPE
     NDDSUSERDllExport extern DDS_ReturnCode_t
     PixyCamConfigPlugin_data_to_string(
         const PixyCamConfig *sample,
         char *str,
         DDS_UnsignedLong *str_size, 
         const struct DDS_PrintFormatProperty *property);    
-
-    NDDSUSERDllExport extern RTIBool
-    PixyCamConfigPlugin_skip(
-        PRESTypePluginEndpointData endpoint_data,
-        struct RTICdrStream *stream, 
-        RTIBool skip_encapsulation,  
-        RTIBool skip_sample, 
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern unsigned int 
-    PixyCamConfigPlugin_get_serialized_sample_max_size_ex(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool * overflow,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment);    
+    #endif
 
     NDDSUSERDllExport extern unsigned int 
     PixyCamConfigPlugin_get_serialized_sample_max_size(
@@ -899,34 +662,11 @@ extern "C" {
         RTIEncapsulationId encapsulation_id,
         unsigned int current_alignment);
 
-    NDDSUSERDllExport extern unsigned int 
-    PixyCamConfigPlugin_get_serialized_sample_min_size(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment);
-
-    NDDSUSERDllExport extern unsigned int
-    PixyCamConfigPlugin_get_serialized_sample_size(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment,
-        const PixyCamConfig * sample);
-
     /* --------------------------------------------------------------------------------------
     Key Management functions:
     * -------------------------------------------------------------------------------------- */
     NDDSUSERDllExport extern PRESTypePluginKeyKind 
     PixyCamConfigPlugin_get_key_kind(void);
-
-    NDDSUSERDllExport extern unsigned int 
-    PixyCamConfigPlugin_get_serialized_key_max_size_ex(
-        PRESTypePluginEndpointData endpoint_data,
-        RTIBool * overflow,
-        RTIBool include_encapsulation,
-        RTIEncapsulationId encapsulation_id,
-        unsigned int current_alignment);
 
     NDDSUSERDllExport extern unsigned int 
     PixyCamConfigPlugin_get_serialized_key_max_size(
@@ -935,24 +675,11 @@ extern "C" {
         RTIEncapsulationId encapsulation_id,
         unsigned int current_alignment);
 
-    NDDSUSERDllExport extern RTIBool 
-    PixyCamConfigPlugin_serialize_key(
+    NDDSUSERDllExport extern unsigned int 
+    PixyCamConfigPlugin_get_serialized_key_max_size_for_keyhash(
         PRESTypePluginEndpointData endpoint_data,
-        const PixyCamConfig *sample,
-        struct RTICdrStream *stream,
-        RTIBool serialize_encapsulation,
         RTIEncapsulationId encapsulation_id,
-        RTIBool serialize_key,
-        void *endpoint_plugin_qos);
-
-    NDDSUSERDllExport extern RTIBool 
-    PixyCamConfigPlugin_deserialize_key_sample(
-        PRESTypePluginEndpointData endpoint_data,
-        PixyCamConfig * sample,
-        struct RTICdrStream *stream,
-        RTIBool deserialize_encapsulation,
-        RTIBool deserialize_key,
-        void *endpoint_plugin_qos);
+        unsigned int current_alignment);
 
     NDDSUSERDllExport extern RTIBool 
     PixyCamConfigPlugin_deserialize_key(
@@ -964,14 +691,8 @@ extern "C" {
         RTIBool deserialize_key,
         void *endpoint_plugin_qos);
 
-    NDDSUSERDllExport extern RTIBool
-    PixyCamConfigPlugin_serialized_sample_to_key(
-        PRESTypePluginEndpointData endpoint_data,
-        PixyCamConfig *sample,
-        struct RTICdrStream *stream, 
-        RTIBool deserialize_encapsulation,  
-        RTIBool deserialize_key, 
-        void *endpoint_plugin_qos);
+    NDDSUSERDllExport extern
+    struct RTIXCdrInterpreterPrograms *PixyCamConfigPlugin_get_programs();
 
     /* Plugin Functions */
     NDDSUSERDllExport extern struct PRESTypePlugin*
@@ -982,7 +703,7 @@ extern "C" {
 
 }
 
-#if (defined(RTI_WIN32) || defined (RTI_WINCE)) && defined(NDDS_USER_DLL_EXPORT)
+#if (defined(RTI_WIN32) || defined (RTI_WINCE) || defined(RTI_INTIME)) && defined(NDDS_USER_DLL_EXPORT)
 /* If the code is building on Windows, stop exporting symbols.
 */
 #undef NDDSUSERDllExport
