@@ -4,13 +4,9 @@
 #include <ctype.h>
 #include <signal.h>
 #include <string.h>
-//#include "pixy.h"
-#include "ShapeType.h"
-#include "ShapeTypeSupport.h"
-#include "ServoControl.h"
-#include "ServoControlSupport.h"
 
 #include "ndds/ndds_cpp.h"
+#include <pthread.h>
 
 static bool run_flag = true;
 static bool got_matched_publisher = false;
@@ -79,24 +75,75 @@ const char *sigName[] = {
 
 // Local prototypes
 void handle_SIGINT(int unused);
-void initialize_gimbals(void);
 int track (int domainId, unsigned int);
 int main (int argc, char *argv[]);
 
-//-------------------------------------------------------------------
-// We'll need one of these for pan, and one for tilt.  Holds
-// variables for running the tracking algorithm
-//-------------------------------------------------------------------
-struct Gimbal {
-  int32_t position;
-  int32_t previous_error;
-  int32_t proportional_gain;
-  int32_t derivative_gain;
+class Gimbal {
+	public:
+		Gimbal() {
+			pan.position           = PIXY_RCS_CENTER_POS;
+			pan.previous_error     = 0x80000000;
+			pan.proportional_gain  = PAN_PROPORTIONAL_GAIN;
+			pan.derivative_gain    = PAN_DERIVATIVE_GAIN;
+			tilt.position          = PIXY_RCS_CENTER_POS;
+			tilt.previous_error    = 0x80000000;
+			tilt.proportional_gain = TILT_PROPORTIONAL_GAIN;
+			tilt.derivative_gain   = TILT_DERIVATIVE_GAIN;
+		}
+
+		void update_pan (DDS_Long x) {
+			int pan_error = PIXY_X_CENTER - x;
+			update(&pan, pan_error);
+		}
+		void update_tilt (DDS_Long y) {
+			int tilt_error = y - PIXY_Y_CENTER;
+			update(&tilt, tilt_error);
+		}
+
+		int32_t get_pan_position()  { return pan.position; }
+		int32_t get_tilt_position() { return tilt.position; }
+
+	private:
+		struct GimbalParams {
+			int32_t position;
+			int32_t previous_error;
+			int32_t proportional_gain;
+			int32_t derivative_gain;
+		} pan, tilt;
+
+		//-------------------------------------------------------------------
+		// This calculates the position each axis of the cam control (pan/tilt)
+		//-------------------------------------------------------------------
+		void update(struct GimbalParams * gimbal, int32_t error) {
+
+			long int velocity;
+			int32_t  error_delta;
+			int32_t  P_gain;
+			int32_t  D_gain;
+
+			if(gimbal->previous_error != 0x80000000)
+			{
+				error_delta = error - gimbal->previous_error;
+				P_gain      = gimbal->proportional_gain;
+				D_gain      = gimbal->derivative_gain;
+
+				/* Using the proportional and derivative gain for the gimbal,
+				calculate the change to the position.  */
+				velocity = (error * P_gain + error_delta * D_gain) >> 10;
+
+				gimbal->position += velocity;
+
+				if (gimbal->position > PIXY_RCS_MAX_POS)
+				{
+					gimbal->position = PIXY_RCS_MAX_POS;
+				} else if (gimbal->position < PIXY_RCS_MIN_POS)
+				{
+					gimbal->position = PIXY_RCS_MIN_POS;
+				}
+			}
+			gimbal->previous_error = error;
+		}
 };
-
-struct Gimbal pan;
-struct Gimbal tilt;
-
 
 //-------------------------------------------------------------------
 // handle_SIGINT - sets flag for orderly shutdown on Ctrl-C
@@ -104,168 +151,258 @@ struct Gimbal tilt;
 void handle_SIGINT(int unused)
 {
   // On CTRL+C - abort! //
-
   run_flag = false;
 }
 
-//-------------------------------------------------------------------
-// Setup the gimbal control structures
-//-------------------------------------------------------------------
-void initialize_gimbals(void)
-{
-	pan.position = PIXY_RCS_CENTER_POS;
-	pan.previous_error     = 0x80000000L;
-	pan.proportional_gain  = PAN_PROPORTIONAL_GAIN;
-	pan.derivative_gain    = PAN_DERIVATIVE_GAIN;
-	tilt.position          = PIXY_RCS_CENTER_POS;
-	tilt.previous_error    = 0x80000000L;
-	tilt.proportional_gain = TILT_PROPORTIONAL_GAIN;
-	tilt.derivative_gain   = TILT_DERIVATIVE_GAIN;
+class WaitsetWriterInfo {
+    // holds waitset info needed for the writer waitset processing thread
+    public:
+        DDSDynamicDataWriter * servo_writer;
+		bool * run_flag;
+} ;
+
+void*  pthreadToProcWriterEvents(void *waitsetWriterInfo) {
+    WaitsetWriterInfo * myWaitsetInfo;
+    myWaitsetInfo = (WaitsetWriterInfo *)waitsetWriterInfo;
+	DDSWaitSet *waitset = waitset = new DDSWaitSet();;
+    DDS_ReturnCode_t retcode;
+    DDSConditionSeq active_conditions_seq;
+
+    printf("Created Writer Pthread\n");
+    // Configure Waitset for Writer Status ****
+    DDSStatusCondition *status_condition = myWaitsetInfo->servo_writer->get_statuscondition();
+    if (status_condition == NULL) {
+        printf("get_statuscondition error\n");
+        goto end_writer_thread;
+    }
+
+    // Set enabled statuses
+    retcode = status_condition->set_enabled_statuses(
+            DDS_PUBLICATION_MATCHED_STATUS);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("set_enabled_statuses error\n");
+        goto end_writer_thread;
+    }
+
+    // Attach Status Conditions to the above waitset
+    retcode = waitset->attach_condition(status_condition);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("attach_condition error\n");
+        goto end_writer_thread;
+    }
+
+    // wait() blocks execution of the thread until one or more attached
+    
+	// thread exits upon ^c or error
+    while ((* myWaitsetInfo->run_flag) == true) { 
+        retcode = waitset->wait(active_conditions_seq, DDS_DURATION_INFINITE);
+        /* We get to timeout if no conditions were triggered */
+        if (retcode == DDS_RETCODE_TIMEOUT) {
+            printf("Wait timed out!! No conditions were triggered.\n");
+            continue;
+        } else if (retcode != DDS_RETCODE_OK) {
+            printf("wait returned error: %d\n", retcode);
+            goto end_writer_thread;
+        }
+
+        /* Get the number of active conditions */
+        int active_conditions = active_conditions_seq.length();
+
+        for (int i = 0; i < active_conditions; ++i) {
+            /* Compare with Status Conditions */
+            if (active_conditions_seq[i] == status_condition) {
+                DDS_StatusMask triggeredmask =
+                        myWaitsetInfo->servo_writer->get_status_changes();
+
+                if (triggeredmask & DDS_PUBLICATION_MATCHED_STATUS) {
+					DDS_PublicationMatchedStatus st;
+                	myWaitsetInfo->servo_writer->get_publication_matched_status(st);
+					printf("\nServo Subs: %d %d\n", st.current_count, st.current_count_change);
+					if (st.current_count > 0)
+						got_matched_subscriber = true;
+					else
+						got_matched_subscriber = false;
+                }
+            } else {
+                // writers can only have status condition
+                printf ("False Writer Event Trigger");
+            }
+        }
+	} // While (run_flag)
+	end_writer_thread: // reached by ^C or an error
+	printf("Writer Pthread Exiting\n");
+	exit(0);
 }
 
-//-------------------------------------------------------------------
-// This is the control loop for each axis of the cam control (pan/tilt)
-//-------------------------------------------------------------------
-void gimbal_update(struct Gimbal *  gimbal, int32_t error)
-{
-	long int velocity;
-	int32_t  error_delta;
-	int32_t  P_gain;
-	int32_t  D_gain;
+class WaitsetReaderInfo {
+    // holds waitset info needed for the Reader waitset processing thread
+    public:
+        DDSDynamicDataReader * track_reader;
+		DDSDynamicDataWriter * servo_writer; // tracker reader will do the writing
+		bool * run_flag;
+} ;
 
-	if(gimbal->previous_error != 0x80000000)
-	{
-		error_delta = error - gimbal->previous_error;
-		P_gain      = gimbal->proportional_gain;
-		D_gain      = gimbal->derivative_gain;
+void*  pthreadToProcReaderEvents(void *waitsetReaderInfo) {
+    WaitsetReaderInfo * myWaitsetInfo;
+    myWaitsetInfo = (WaitsetReaderInfo *)waitsetReaderInfo;
+	DDSStatusCondition *status_condition =  NULL;
+	DDSReadCondition * read_condition = NULL;
+	DDSWaitSet *waitset = new DDSWaitSet();
+    DDS_ReturnCode_t retcode;
+    DDSConditionSeq active_conditions_seq;
+	DDS_DynamicDataSeq shape_data_seq;
+	DDS_SampleInfoSeq shape_info_seq;
+	DDS_DynamicData * servo_data = NULL;  // Reader thread publishes gimbal updates and writes vis servo_writer/data
+	bool got_matched_publisher;
 
-		/* Using the proportional and derivative gain for the gimbal,
-	   	   calculate the change to the position.  */
-		velocity = (error * P_gain + error_delta * D_gain) >> 10;
+	Gimbal gimbal;
+	DDS_Long x;
+	DDS_Long y;
+	DDS_UnsignedShort frequency = SERVO_FREQUENCY_HZ;
+	int frame_count = 0;
+	char channel_filter[50];
 
-		gimbal->position += velocity;
-
-		if (gimbal->position > PIXY_RCS_MAX_POS)
-		{
-			gimbal->position = PIXY_RCS_MAX_POS;
-		} else if (gimbal->position < PIXY_RCS_MIN_POS)
-		{
-			gimbal->position = PIXY_RCS_MIN_POS;
-		}
+    printf("Created Reader Pthread\n");
+	
+    servo_data = myWaitsetInfo->servo_writer->create_data(DDS_DYNAMIC_DATA_PROPERTY_DEFAULT);
+    if (servo_data == NULL) {
+        fprintf(stderr, "create_data error\n");
+		goto end_reader_thread;
+    } 
+  
+	retcode = servo_data->set_ushort("frequency", DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED, frequency);
+	if (retcode != DDS_RETCODE_OK) {
+		fprintf(stderr, "set frequency error\n");
+		goto end_reader_thread;
 	}
+    // Create read condition
+    read_condition = myWaitsetInfo->track_reader->create_readcondition(
+            DDS_NOT_READ_SAMPLE_STATE,
+            DDS_ANY_VIEW_STATE,
+            DDS_ANY_INSTANCE_STATE);
+    if (read_condition == NULL) {
+        printf("create_readcondition error\n");
+		goto end_reader_thread;
+    }
 
-  gimbal->previous_error = error;
+    //  Get status conditions
+    status_condition = myWaitsetInfo->track_reader->get_statuscondition();
+    if (status_condition == NULL) {
+        printf("get_statuscondition error\n");
+ 		goto end_reader_thread;
+    }
+
+    // Set enabled statuses
+    retcode = status_condition->set_enabled_statuses(DDS_SUBSCRIPTION_MATCHED_STATUS);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("set_enabled_statuses error\n");
+ 		goto end_reader_thread;
+    }   
+
+    /* Attach Read Conditions */
+    retcode = waitset->attach_condition(read_condition);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("attach_condition error\n");
+		goto end_reader_thread;
+    }
+
+    /* Attach Status Conditions */
+    retcode = waitset->attach_condition(status_condition);
+    if (retcode != DDS_RETCODE_OK) {
+        printf("attach_condition error\n");
+		goto end_reader_thread;
+    }
+
+	while ((* myWaitsetInfo->run_flag) == true) {
+
+       	retcode = waitset->wait(active_conditions_seq, DDS_DURATION_INFINITE);
+        /* We get to timeout if no conditions were triggered */
+        if (retcode == DDS_RETCODE_TIMEOUT) {
+            printf("Tracker reader Wait timed out!! No conditions were triggered.\n");
+            continue;
+        } else if (retcode != DDS_RETCODE_OK) {
+            printf("Tracker reader wait returned error: %d\n", retcode);
+            goto end_reader_thread;
+        }
+
+        int active_conditions = active_conditions_seq.length();
+
+        for (int i = 0; i < active_conditions; ++i) {
+
+            if (active_conditions_seq[i] == status_condition) {
+                /* Get the status changes so we can check which status
+                 * condition triggered. */
+                DDS_StatusMask triggeredmask =
+                        myWaitsetInfo->track_reader->get_status_changes();
+
+                /* Subscription matched */
+                if (triggeredmask & DDS_SUBSCRIPTION_MATCHED_STATUS) {
+                    DDS_SubscriptionMatchedStatus st;
+                    myWaitsetInfo->track_reader->get_subscription_matched_status(st);
+					printf("\nShapes Pubs: %d %d\n", st.current_count, st.current_count_change);
+					if (st.current_count > 0)
+						got_matched_publisher = true;
+					else
+						got_matched_publisher = false;
+                }
+            }
+
+            /* Compare with Read Conditions */
+            else if (active_conditions_seq[i] == read_condition) {
+
+				// Get the latest samples
+				retcode = myWaitsetInfo->track_reader->take(
+							shape_data_seq, shape_info_seq, DDS_LENGTH_UNLIMITED,
+							DDS_ANY_SAMPLE_STATE, DDS_ANY_VIEW_STATE, DDS_ANY_INSTANCE_STATE);
+
+				if (retcode == DDS_RETCODE_OK) {
+					for (int i = 0; i < shape_data_seq.length(); ++i) {
+						if (shape_info_seq[i].valid_data) {                       
+							// Control the pan & tilt
+							retcode=shape_data_seq[i].get_long(x, "x", DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
+							if (retcode != DDS_RETCODE_OK) goto end_reader_thread;
+							retcode=shape_data_seq[i].get_long(y, "y", DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED);
+							if (retcode != DDS_RETCODE_OK) goto end_reader_thread;
+
+							gimbal.update_pan(x);
+							gimbal.update_tilt(y);
+
+							retcode = servo_data->set_ushort("pan", DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED, gimbal.get_pan_position());
+							if (retcode != DDS_RETCODE_OK) goto end_reader_thread;
+							retcode = servo_data->set_ushort("tilt", DDS_DYNAMIC_DATA_MEMBER_ID_UNSPECIFIED, gimbal.get_tilt_position());
+							if (retcode != DDS_RETCODE_OK) goto end_reader_thread;
+							retcode = myWaitsetInfo->servo_writer->write(* servo_data, DDS_HANDLE_NIL);
+
+							if (frame_count++ > 10) {
+								frame_count = 0;
+								printf("P: %d T: %d   \r", gimbal.get_pan_position(), gimbal.get_tilt_position());
+								fflush(stdout);
+							}
+						}
+						retcode = myWaitsetInfo->track_reader->return_loan(shape_data_seq, shape_info_seq);
+						if (retcode != DDS_RETCODE_OK) {
+							fprintf(stderr, "return_loan error %d\n", retcode);
+							goto end_reader_thread;
+						}
+					}
+				} else if (retcode == DDS_RETCODE_NO_DATA) {
+					continue;
+				} else {
+					fprintf(stderr, "take data error %d\n", retcode);
+					goto end_reader_thread;
+				}
+			}
+		}
+	} // While (run_flag)
+	end_reader_thread: // reached by ^C or an error
+	printf("Reader Pthread Exiting\n");
+	exit(0);
 }
-
-//-------------------------------------------------------------------
-// Listener class for servo control writer
-//-------------------------------------------------------------------
-class ServoTypeListener : public DDSDataWriterListener
-{
-public:
-	virtual void on_offered_deadline_missed (
-			DDSDataWriter *writer,
-			const DDS_OfferedDeadlineMissedStatus &status)  {}
-
-	virtual void	 on_liveliness_lost (DDSDataWriter *writer,
-			const DDS_LivelinessLostStatus &status) {}
-
-	virtual void on_offered_incompatible_qos (DDSDataWriter *writer,
-			const DDS_OfferedIncompatibleQosStatus &status) {}
-
-	virtual void on_publication_matched (DDSDataWriter *writer,
-			const DDS_PublicationMatchedStatus &status);
-
-	virtual void on_reliable_writer_cache_changed (DDSDataWriter *writer,
-			const DDS_ReliableWriterCacheChangedStatus &status) {}
-
-	virtual void on_reliable_reader_activity_changed (DDSDataWriter *writer,
-			const DDS_ReliableReaderActivityChangedStatus &status) {}
-
-	virtual void on_instance_replaced (DDSDataWriter *writer,
-			const DDS_InstanceHandle_t &handle) {}
-
-	virtual void on_application_acknowledgment (DDSDataWriter *writer,
-			const DDS_AcknowledgmentInfo &info) {}
-
-	virtual void on_service_request_accepted (DDSDataWriter *writer,
-			const DDS_ServiceRequestAcceptedStatus &status) {}
-};
-
-void ServoTypeListener::on_publication_matched(DDSDataWriter *writer, const DDS_PublicationMatchedStatus &status)
-{
-	ServoControlDataWriter *servo_writer = NULL;
-
-	servo_writer = ServoControlDataWriter::narrow(writer);
-	if (NULL==servo_writer) return;
-
-	printf("\n");
-	printf("Subs: %d %d\n", status.current_count, status.current_count_change);
-	if (status.current_count > 0)
-		got_matched_subscriber = true;
-	else
-		got_matched_subscriber = false;
-
-	return;
-}
-
-//-------------------------------------------------------------------
-// Listener class for data reader
-//-------------------------------------------------------------------
-class ShapeTypeListener : public DDSDataReaderListener
-{
-public:
-    virtual void on_requested_deadline_missed(
-        DDSDataReader* /*reader*/,
-        const DDS_RequestedDeadlineMissedStatus& /*status*/) {}
-
-    virtual void on_requested_incompatible_qos(
-        DDSDataReader* /*reader*/,
-        const DDS_RequestedIncompatibleQosStatus& /*status*/) {}
-
-    virtual void on_sample_rejected(
-        DDSDataReader* /*reader*/,
-        const DDS_SampleRejectedStatus& /*status*/) {}
-
-    virtual void on_liveliness_changed(
-        DDSDataReader* /*reader*/,
-        const DDS_LivelinessChangedStatus& /*status*/) {}
-
-    virtual void on_sample_lost(
-        DDSDataReader* /*reader*/,
-        const DDS_SampleLostStatus& /*status*/) {}
-
-    virtual void on_subscription_matched(
-        DDSDataReader* /*reader*/,
-        const DDS_SubscriptionMatchedStatus & /*status*/);
-
-    virtual void on_data_available(DDSDataReader* reader){}
-
-};
-
-
-void ShapeTypeListener::on_subscription_matched(DDSDataReader *reader, const DDS_SubscriptionMatchedStatus &status)
-{
-	ShapeTypeExtendedDataReader *shape_reader = NULL;
-
-	shape_reader = ShapeTypeExtendedDataReader::narrow(reader);
-	if (NULL == shape_reader) return;
-
-	printf("\n");
-	printf("Pubs: %d %d\n", status.current_count, status.current_count_change);
-	if (status.current_count > 0)
-		got_matched_publisher = true;
-	else
-		got_matched_publisher = false;
-
-	return;
-}
-
 
 //-------------------------------------------------------------------
 // Shutdown in an orderly fashion
 //-------------------------------------------------------------------
-static int subscriber_shutdown (DDSDomainParticipant *participant)
+static int participant_shutdown (DDSDomainParticipant *participant)
 {
     DDS_ReturnCode_t retcode;
     int status = 0;
@@ -284,171 +421,81 @@ static int subscriber_shutdown (DDSDomainParticipant *participant)
         }
     }
 
-    /* RTI Connext provides the finalize_instance() method on
-    domain participant factory for people who want to release memory used
-    by the participant factory. Uncomment the following block of code for
-    clean destruction of the singleton. */
-    /*
-
-    retcode = DDSDomainParticipantFactory::finalize_instance();
-    if (retcode != DDS_RETCODE_OK) {
-        fprintf(stderr, "finalize_instance error %d\n", retcode);
-        status = -1;
-    }
-    */
     return status;
-
 }
 
-int track (int domainId, unsigned int tracked_channel)
-{
-	int status = 0;
-	DDSDomainParticipant *participant = NULL;
-	DDSSubscriber *subscriber = NULL;
-	DDSPublisher *publisher = NULL;
-	DDSTopic *shape_topic = NULL;
-	DDSTopic *servo_topic = NULL;
-	DDSDataReader *reader = NULL;
-	DDSDataWriter *writer = NULL;
+int track (unsigned int tracked_channel) {
+	DDSDomainParticipant * participant = NULL;
+	DDSDynamicDataWriter * servo_writer = NULL;
+	DDSDynamicDataReader * track_reader = NULL;	
+	DDS_Duration_t check_period = {1,0};
 	DDS_ReturnCode_t retcode;
-	ShapeTypeListener *shape_listener = new ShapeTypeListener;
-	ServoTypeListener *servo_listener = new ServoTypeListener;
-	const char *shape_type_name = NULL;
-	const char *servo_type_name = NULL;
-	ShapeTypeExtended shape;
-	DDS_SampleInfo shape_info;
-	ServoControl servo_control;
-	DDS_InstanceHandle_t servo_handle = DDS_HANDLE_NIL;
-	int pan_error;
-	int tilt_error;
-	int frame_count = 0;
-	char channel_filter[50];
+	int status = 0;
 
-	// Create the domain participant
-	participant = DDSTheParticipantFactory->create_participant_with_profile(domainId,
-																			"PixyTracker_Library",
-																			"PixyTracker_Profile",
-																			NULL, DDS_STATUS_MASK_NONE);
-//	participant = DDSTheParticipantFactory->create_participant(0, DDS_PARTICIPANT_QOS_DEFAULT,NULL,DDS_STATUS_MASK_NONE);
+	// Create the domain participant from XML
+	participant = DDSTheParticipantFactory->create_participant_from_config(
+		"PixyTrackerParticipant_Library::PixyTrackerParticipant");
 	if (participant == NULL) {
 		fprintf(stderr, "create participant error\n");
-		subscriber_shutdown(participant);
-		return -1;
+		goto track_end;
 	}
 
-	// Create a publisher and a subscriber
-	subscriber = participant->create_subscriber(DDS_SUBSCRIBER_QOS_DEFAULT, NULL, DDS_STATUS_MASK_NONE);
-	publisher  = participant->create_publisher (DDS_PUBLISHER_QOS_DEFAULT,  NULL, DDS_STATUS_MASK_NONE);
-	if ((subscriber == NULL) || (publisher == NULL))
-	{
-        fprintf(stderr, "create subscriber/publisher error\n");
-        subscriber_shutdown(participant);
-        return -1;
+	servo_writer = DDSDynamicDataWriter::narrow(
+		participant->lookup_datawriter_by_name("publisher::TrackerHostWriter")); // if Publisher name set in QoS file
+        //participant->lookup_datawriter_by_name("publisher::servo_topic_writer"));
+    if (servo_writer == NULL) {
+        fprintf(stderr, "lookup_datawriter_by_name error\n"); 
+		goto track_end;
+    }
 
+ 	track_reader = DDSDynamicDataReader::narrow(
+		participant->lookup_datareader_by_name("subscriber::TrackerHostReader")); // if Subscriber name set in QoS file
+        //participant->lookup_datareader_by_name("subscriber::shape_topic_reader")); 
+    if (track_reader == NULL) {
+        fprintf(stderr, "lookup_datareader_by_name error\n");
+		goto track_end;
+    }
+
+    // Turn up a waitset threads and hang on them for writer events and reader events and data
+    WaitsetWriterInfo myWaitsetWriterInfo;
+    myWaitsetWriterInfo.servo_writer = servo_writer;
+	myWaitsetWriterInfo.run_flag = &run_flag;
+    pthread_t wtid;
+    pthread_create(&wtid, NULL, pthreadToProcWriterEvents, (void*) &myWaitsetWriterInfo);
+
+    WaitsetReaderInfo myWaitsetReaderInfo;
+    myWaitsetReaderInfo.track_reader = track_reader;
+	myWaitsetReaderInfo.servo_writer = servo_writer; // tracker_reader does the writing
+	myWaitsetReaderInfo.run_flag = &run_flag;
+	pthread_t rtid;
+    pthread_create(&rtid, NULL, pthreadToProcReaderEvents, (void*) &myWaitsetReaderInfo);
+
+	// main loop - reading and writing done in reader thread so nothing to do here
+	while (run_flag == true) {
+		// do 3-way voting logic here?
+		NDDSUtility::sleep(check_period); // check every 1 sec for a ^C to stop
 	}
-
-	// Register the types
-	shape_type_name = ShapeTypeExtendedTypeSupport::get_type_name();
-	servo_type_name = ServoControlTypeSupport::get_type_name();
-	ShapeTypeExtendedTypeSupport::register_type(participant, shape_type_name);
-	ServoControlTypeSupport::register_type(participant, servo_type_name);
-
-	// Create topics
-	shape_topic = participant->create_topic("Circle", shape_type_name, DDS_TOPIC_QOS_DEFAULT, NULL, DDS_STATUS_MASK_NONE);
-	servo_topic = participant->create_topic(DEFAULT_CAM_CONTROL_TOPIC_NAME, servo_type_name, DDS_TOPIC_QOS_DEFAULT, NULL, DDS_STATUS_MASK_NONE);
-
-	// Create a content filtered topic with the tracked color name "color MATCH 'GREEN'"
-	DDSContentFilteredTopic *cft = NULL;
-    const DDS_StringSeq noFilterParams;
-
-	if (shape_topic)
-	{
-		sprintf(channel_filter, "color MATCH '%s'", sigName[tracked_channel]);
-		cft = participant->create_contentfilteredtopic("TrackedShape", shape_topic, channel_filter, noFilterParams);
-		if (cft == NULL)
-		{
-	        fprintf(stderr, "create content filtered topic\n");
-	        subscriber_shutdown(participant);
-	        return -1;
-		}
-	}
-
-	// Create a data reader and a data writer
-	reader = participant->create_datareader_with_profile(cft, "PixyTracker_Library", "PixyTracker_Profile", shape_listener, DDS_STATUS_MASK_ALL);
-	writer = participant->create_datawriter_with_profile(servo_topic, "PixyTracker_Library", "PixyTracker_Profile", servo_listener, DDS_STATUS_MASK_ALL);
-	if ((reader == NULL) || (writer == NULL))
-	{
-        fprintf(stderr, "create reader and writer\n");
-        subscriber_shutdown(participant);
-        return -1;
-	}
-
-
-	ShapeTypeExtendedDataReader *track_reader = ShapeTypeExtendedDataReader::narrow(reader);
-	ServoControlDataWriter *servo_writer = ServoControlDataWriter::narrow(writer);
-	if ((track_reader == NULL) || (servo_writer == NULL))
-	{
-        fprintf(stderr, "create track reader and servo writer\n");
-        subscriber_shutdown(participant);
-        return -1;
-	}
-
-	ServoControl_initialize(&servo_control);
-	servo_control.pan = PIXY_RCS_CENTER_POS;
-	servo_control.tilt = PIXY_RCS_CENTER_POS;
-	servo_control.frequency = SERVO_FREQUENCY_HZ;
-
-	ShapeTypeExtended_initialize(&shape);
-
-	while (run_flag == true)
-	{
-		// Get the latest sample
-		retcode = track_reader->take_next_sample(shape, shape_info);
-
-		if ((retcode == DDS_RETCODE_OK) && (shape_info.valid_data == RTI_TRUE))
-		{
-			// Control the pan & tilt
-			pan_error = PIXY_X_CENTER - shape.x;
-			tilt_error = shape.y - PIXY_Y_CENTER;
-			gimbal_update(&pan, pan_error);
-			gimbal_update(&tilt, tilt_error);
-
-			servo_control.pan = (unsigned short) pan.position;
-			servo_control.tilt = (unsigned short) tilt.position;
-			servo_writer->write(servo_control, servo_handle);
-
-			if (frame_count++ > 10)
-			{
-				frame_count = 0;
-				printf("P: %d T: %d   \r", pan.position, tilt.position);
-				fflush(stdout);
-				}
-		}
-	}
-	status = subscriber_shutdown(participant);
+	track_end: // reached by ^C or an error
+	status = participant_shutdown(participant);
 	return status;
 }
 //-------------------------------------------------------------------
 // Program entry point
 //-------------------------------------------------------------------
-int main (int argc, char *argv[])
-{
-    int domainId = 53;
-    unsigned int trackedChannel = INDEX_GREEN;
+int main (int argc, char *argv[]) {
+    // Note the color is now set in the XML filter. 
+	// ** TODO if a color is specified as arg v, Programatically change the filter parameter.
+    unsigned int trackedChannel = INDEX_YELLOW;
 
     signal(SIGINT, handle_SIGINT);
 
     printf("PIXY TRACKER: %s %s\n", __DATE__, __TIME__);
-    printf("DomainID: %d\n", domainId);
+    //printf("DomainID: %d\n", domainId);
 
-    if (argc > 1)
-    {
-        for (int count = 1; count < argc; count++)
-        {
-            for (int sigs = 0; sigs < NUM_SIGS; sigs++)
-            {
-                if (strcmp(argv[count], sigName[sigs])== 0)
-                {
+    if (argc > 1) {
+        for (int count = 1; count < argc; count++) {
+            for (int sigs = 0; sigs < NUM_SIGS; sigs++) {
+                if (strcmp(argv[count], sigName[sigs])== 0) {
                     trackedChannel = sigs;
                     break;
                 }
@@ -458,7 +505,5 @@ int main (int argc, char *argv[])
 
     if (trackedChannel > NUM_SIGS) trackedChannel = INDEX_GREEN;
     printf("Tracking %s\n", sigName[trackedChannel]);
-    initialize_gimbals();
-    track(domainId, trackedChannel);
-
+    track(trackedChannel);
 }
