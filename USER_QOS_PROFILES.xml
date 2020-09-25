@@ -52,6 +52,7 @@
             <name>TrackerParticipant1</name> <!-- We can change this name w/o Code changes to see different participants in Admin Console -->
             <role_name>TrackerRole</role_name>
           </participant_name>
+	  <!-- CONFIGURE 6.0.1 Participant to XCDR1 uncompressed to interop with 5.3.1 via the following -->
           <discovery_config>
             <endpoint_type_object_lb_serialization_threshold>-1</endpoint_type_object_lb_serialization_threshold>
           </discovery_config>
