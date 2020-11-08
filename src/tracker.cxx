@@ -165,7 +165,6 @@ void*  pthreadToProcWriterEvents(void *waitsetWriterInfo) {
 	DDSWaitSet *waitset = new DDSWaitSet();;
     DDS_ReturnCode_t retcode;
     DDSConditionSeq active_conditions_seq;
-    static bool got_matched_subscriber = false;
 
     printf("Created Writer Pthread\n");
     // Configure Waitset for Writer Status ****
@@ -217,10 +216,6 @@ void*  pthreadToProcWriterEvents(void *waitsetWriterInfo) {
 					DDS_PublicationMatchedStatus st;
                 	myWaitsetInfo->servo_writer->get_publication_matched_status(st);
 					printf("\nServo Subs: %d %d\n", st.current_count, st.current_count_change);
-					if (st.current_count > 0)
-						got_matched_subscriber = true;
-					else
-						got_matched_subscriber = false;
                 }
             } else {
                 // writers can only have status condition
@@ -252,7 +247,6 @@ void*  pthreadToProcReaderEvents(void *waitsetReaderInfo) {
 	DDS_DynamicDataSeq shape_data_seq;
 	DDS_SampleInfoSeq shape_info_seq;
 	DDS_DynamicData * servo_data = NULL;  // Reader thread publishes gimbal updates and writes vis servo_writer/data
-	bool got_matched_publisher;
 
 	Gimbal gimbal;
 	DDS_Long x;
@@ -338,10 +332,6 @@ void*  pthreadToProcReaderEvents(void *waitsetReaderInfo) {
                     DDS_SubscriptionMatchedStatus st;
                     myWaitsetInfo->track_reader->get_subscription_matched_status(st);
 					printf("\nShapes Pubs: %d %d\n", st.current_count, st.current_count_change);
-					if (st.current_count > 0)
-						got_matched_publisher = true;
-					else
-						got_matched_publisher = false;
                 }
             }
 
