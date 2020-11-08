@@ -9,8 +9,6 @@
 #include <pthread.h>
 
 static bool run_flag = true;
-static bool got_matched_publisher = false;
-static bool got_matched_subscriber = false;
 
 #define NUM_SIGS 7
 
@@ -164,9 +162,10 @@ class WaitsetWriterInfo {
 void*  pthreadToProcWriterEvents(void *waitsetWriterInfo) {
     WaitsetWriterInfo * myWaitsetInfo;
     myWaitsetInfo = (WaitsetWriterInfo *)waitsetWriterInfo;
-	DDSWaitSet *waitset = waitset = new DDSWaitSet();;
+	DDSWaitSet *waitset = new DDSWaitSet();;
     DDS_ReturnCode_t retcode;
     DDSConditionSeq active_conditions_seq;
+    static bool got_matched_subscriber = false;
 
     printf("Created Writer Pthread\n");
     // Configure Waitset for Writer Status ****
@@ -194,7 +193,7 @@ void*  pthreadToProcWriterEvents(void *waitsetWriterInfo) {
     // wait() blocks execution of the thread until one or more attached
     
 	// thread exits upon ^c or error
-    while ((* myWaitsetInfo->run_flag) == true) { 
+    while ((* myWaitsetInfo->run_flag) == true) {
         retcode = waitset->wait(active_conditions_seq, DDS_DURATION_INFINITE);
         /* We get to timeout if no conditions were triggered */
         if (retcode == DDS_RETCODE_TIMEOUT) {
@@ -260,7 +259,6 @@ void*  pthreadToProcReaderEvents(void *waitsetReaderInfo) {
 	DDS_Long y;
 	DDS_UnsignedShort frequency = SERVO_FREQUENCY_HZ;
 	int frame_count = 0;
-	char channel_filter[50];
 
     printf("Created Reader Pthread\n");
 	
@@ -429,7 +427,6 @@ int track (unsigned int tracked_channel) {
 	DDSDynamicDataWriter * servo_writer = NULL;
 	DDSDynamicDataReader * track_reader = NULL;	
 	DDS_Duration_t check_period = {1,0};
-	DDS_ReturnCode_t retcode;
 	int status = 0;
 
 	// Create the domain participant from XML
