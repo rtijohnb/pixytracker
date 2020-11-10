@@ -428,16 +428,16 @@ int track (unsigned int tracked_channel) {
 	}
 
 	servo_writer = DDSDynamicDataWriter::narrow(
-		participant->lookup_datawriter_by_name("publisher::TrackerHostWriter")); // if Publisher name set in QoS file
-        //participant->lookup_datawriter_by_name("publisher::servo_topic_writer"));
+		//participant->lookup_datawriter_by_name("publisher::TrackerHostWriter")); // if Publisher name set in QoS file
+        participant->lookup_datawriter_by_name("publisher::servo_topic_writer"));
     if (servo_writer == NULL) {
         fprintf(stderr, "lookup_datawriter_by_name error\n"); 
 		goto track_end;
     }
 
  	track_reader = DDSDynamicDataReader::narrow(
-		participant->lookup_datareader_by_name("subscriber::TrackerHostReader")); // if Subscriber name set in QoS file
-        //participant->lookup_datareader_by_name("subscriber::shape_topic_reader")); 
+		//participant->lookup_datareader_by_name("subscriber::TrackerHostReader")); // if Subscriber name set in QoS file
+        participant->lookup_datareader_by_name("subscriber::shape_topic_reader"));
     if (track_reader == NULL) {
         fprintf(stderr, "lookup_datareader_by_name error\n");
 		goto track_end;

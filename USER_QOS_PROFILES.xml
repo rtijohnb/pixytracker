@@ -65,16 +65,8 @@
               </element>
             </value>
           </multicast>
-          <subscription_name>
-            <name>TrackerHostReader</name>
-            <role_name>TrackerReader</role_name>
-          </subscription_name>
         </datareader_qos>
         <datawriter_qos>
-          <publication_name>
-            <name>TrackerHostWriter</name>
-            <role_name>TrackerWriter</role_name>
-          </publication_name>
         </datawriter_qos>
       </qos_profile>
     </qos_library>
