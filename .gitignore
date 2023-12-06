@@ -1,5 +1,1 @@
-Debug/
-Release/
-reader/objs/
-reader/objs/x64Darwin17clang9.0/
-
+src/build

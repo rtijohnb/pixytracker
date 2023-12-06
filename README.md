@@ -12,3 +12,17 @@ You specify the color of the ball to track on the command line.  The app subscri
 
 The application is built for Mac OS using Eclipse.
 
+To launch -
+
+start pi - xterm ssh pi@192.168.x.y -Y
+~rti_workspace/pixyshapes2  - pixyCronStart.sh
+
+start tracker on mac:
+in terminal: source /Application/rti_connext_dds-6.0.1/resource/scripts/rtisetenv_x64Darwin17clang9.0.bash
+cd ~/GitHub/pixytracker
+./Release/pixytracker
+
+
+start RTI Shapes demo from 5.3.1 domain 53
+
+
